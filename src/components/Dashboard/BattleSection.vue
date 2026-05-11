@@ -8,19 +8,28 @@
           <div>
             <span class="label">對戰者</span>
             <strong>{{ battleInfo.player1Name }}</strong>
+            <div :class="['timer', { active: currentTimerPlayer === battleInfo.player1Name && isTimerRunning }]">
+              {{ challengerTimer }}s
+            </div>
+          </div>
+          <div v-if="selectedThemeName" class="theme-meta">
+            <span class="label">主題</span>
+            <strong>{{ selectedThemeName }}</strong>
           </div>
           <div>
             <span class="label">VS</span>
             <strong>{{ battleInfo.player2Name }}</strong>
-          </div>
-          <div v-if="selectedThemeName">
-            <span class="label">主題</span>
-            <strong>{{ selectedThemeName }}</strong>
+            <div :class="['timer', { active: currentTimerPlayer === battleInfo.player2Name && isTimerRunning }]">
+              {{ defenderTimer }}s
+            </div>
           </div>
         </div>
         <img :src="battleInfo.image" :alt="battleInfo.image" class="battle-image" />
         <div class="battle-bottom">
           <span>Time Remaining: {{ battleInfo.timeRemaining }}s</span>
+          <div v-if="battleWinner" class="winner-announcement">
+            🎉 Winner: {{ battleWinner }} 🎉
+          </div>
         </div>
       </div>
 
@@ -42,40 +51,88 @@
         </div>
       </div>
       <div class="answer-body">
-        <p>這裡由主持人顯示答對 / 跳過後的答案內容。</p>
+        <p v-if="showAnswer">{{ currentAnswer || selectedThemeAnswers[currentPhotoIndex] || '暫無答案' }}</p>
+        <p v-else>這裡由主持人顯示答對 / 跳過後的答案內容。</p>
       </div>
       <div class="answer-footer">
-        <button class="next-btn" @click="onNextPhoto" :disabled="isNextDisabled">下一題</button>
+        <button class="next-btn" @click="nextQuestion" :disabled="isNextDisabled">下一題</button>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useGameStore } from '../../pinia/store'
+
+const gameStore = useGameStore()
 
 const props = defineProps<{
-  battleInfo: { player1Name: string; player2Name: string; image: string; timeRemaining: number } | null
-  voteResults: Record<string, any> | null
   selectedThemeName: string
   selectedThemePhotos: string[]
-  currentPhotoIndex: number
-  onNextPhoto: () => void
+  selectedThemeAnswers: string[]
   onStartDemo: () => void
 }>()
 
-const {
-  battleInfo,
-  voteResults,
-  selectedThemeName,
+const selectedThemeName = computed(() => props.selectedThemeName)
+const selectedThemePhotos = computed(() => props.selectedThemePhotos)
+const selectedThemeAnswers = computed(() => props.selectedThemeAnswers)
+const onStartDemo = computed(() => props.onStartDemo)
+
+const battleInfo = computed(() => gameStore.currentBattle)
+const voteResults = computed(() => gameStore.voteResults)
+const challengerTimer = computed(() => gameStore.challengerTimer)
+const defenderTimer = computed(() => gameStore.defenderTimer)
+const currentTimerPlayer = computed(() => gameStore.currentTimerPlayer)
+const isTimerRunning = computed(() => gameStore.isTimerRunning)
+const battleWinner = computed(() => gameStore.battleWinner)
+
+const currentPhotoIndex = ref(0)
+const showAnswer = ref(false)
+const currentAnswer = ref('')
+
+watch(
   selectedThemePhotos,
-  currentPhotoIndex,
-  onNextPhoto,
-  onStartDemo
-} = props
+  () => {
+    currentPhotoIndex.value = 0
+    showAnswer.value = false
+    currentAnswer.value = ''
+  },
+  { immediate: true }
+)
+
+const nextQuestion = () => {
+  if (selectedThemePhotos.value.length === 0 || showAnswer.value) return
+
+  // 顯示答案
+  currentAnswer.value = selectedThemeAnswers.value[currentPhotoIndex.value] ?? '暫無答案'
+  showAnswer.value = true
+
+  // 暫停 timer
+  gameStore.pauseTimer()
+
+  // 0.8秒後切換照片並換 timer
+  setTimeout(() => {
+    showAnswer.value = false
+
+    if (currentPhotoIndex.value < selectedThemePhotos.value.length - 1) {
+      currentPhotoIndex.value += 1
+      const nextImage = selectedThemePhotos.value[currentPhotoIndex.value]
+      const currentBattle = gameStore.currentBattle
+      if (nextImage && currentBattle) {
+        gameStore.startBattle(currentBattle.player1Name, currentBattle.player2Name, nextImage)
+        gameStore.switchTimer()
+        gameStore.startTimer(gameStore.currentTimerPlayer || '')
+      }
+    } else {
+      // 最後一張仍然恢復 timer
+      gameStore.startTimer(gameStore.currentTimerPlayer || '')
+    }
+  }, 800)
+}
 
 const isNextDisabled = computed(
-  () => currentPhotoIndex >= selectedThemePhotos.length - 1 || selectedThemePhotos.length === 0
+  () => selectedThemePhotos.value.length === 0 || showAnswer.value
 )
 </script>
 
@@ -116,10 +173,53 @@ const isNextDisabled = computed(
   margin-bottom: 1rem;
 }
 
+.battle-meta > div {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.theme-meta {
+  text-align: center;
+}
+
 .battle-meta .label {
   display: block;
   color: #7f8c8d;
   font-size: 0.85rem;
+}
+
+.timer {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #bdc3c7; /* 黯淡的灰色背景 */
+  border-radius: 8px;
+  font-weight: bold;
+  color: #7f8c8d; /* 較淡的文字顏色 */
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.timer.active {
+  background: #f39c12; /* 橙色背景 */
+  color: white;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.winner-announcement {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #d4edda;
+  color: #155724;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 .battle-image {

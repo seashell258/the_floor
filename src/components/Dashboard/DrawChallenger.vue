@@ -3,8 +3,8 @@
     <h3>抽挑戰者</h3>
     <div class="wheel-inner">
       <div class="wheel-controls">
-        <button class="wheel-btn" @click="handleDrawFromWheel">開始抽籤</button>
-        <button class="wheel-btn" @click="handleResetWheel">開始下一輪!</button>
+        <button class="wheel-btn" @click="onDrawFromWheel">開始抽籤</button>
+        <button class="wheel-btn" @click="onResetWheel">開始下一輪!</button>
         <button class="wheel-btn" @click="handleShowRemoveDialog" :disabled="wheelPlayers.length === 0">移除陣亡者</button>
       </div>
 
@@ -19,8 +19,8 @@
         </div>
       </div>
 
-      <div v-if="currentChallenger" class="drawn-result">
-        <p><strong>挑戰者：</strong>{{ currentChallenger.challenger.name }}</p>
+      <div v-if="drawnPlayer" class="drawn-result">
+        <p><strong>挑戰者：</strong>{{ drawnPlayer.name }}</p>
       </div>
     </div>
 
@@ -43,50 +43,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useGameStore, type Player } from '../../pinia/store'
+import { ref } from 'vue'
 
 const props = defineProps<{
+  wheelPlayers: Array<any>
+  drawnPlayer: any
+  onDrawFromWheel: () => void
+  onResetWheel: () => void
   onRemovePlayer: (playerName: string) => void
 }>()
 
-const { onRemovePlayer } = props
-
-const gameStore = useGameStore()
+const {
+  wheelPlayers,
+  drawnPlayer,
+  onDrawFromWheel,
+  onResetWheel,
+  onRemovePlayer
+} = props
 
 // 組件內部狀態
 const showRemoveDialog = ref(false)
-
-// 計算可用玩家（未被淘汰的玩家）
-const availablePlayers = computed(() =>
-  gameStore.players.filter(p => !gameStore.eliminatedPlayers.includes(p.name))
-)
-
-// 當前輪盤玩家（組件內部管理）
-const wheelPlayers = ref<Player[]>([...availablePlayers.value])
-
-// 當前挑戰者（從 store 獲取）
-const currentChallenger = computed(() => gameStore.currentChallenger)
-
-function handleDrawFromWheel() {
-  if (wheelPlayers.value.length === 0) return
-
-  if (!confirm('是否要開始抽籤？')) return
-
-  const randomIndex = Math.floor(Math.random() * wheelPlayers.value.length)
-  const selectedPlayer = wheelPlayers.value[randomIndex]
-
-  // 從輪盤移除選中的玩家
-  wheelPlayers.value.splice(randomIndex, 1)
-
-  // 設置全域挑戰者
-  gameStore.setChallenger(selectedPlayer)
-}
-
-function handleResetWheel() {
-  wheelPlayers.value = [...availablePlayers.value]
-  gameStore.clearChallenger()
-}
 
 function handleShowRemoveDialog() {
   showRemoveDialog.value = true
@@ -99,8 +75,6 @@ function handleHideRemoveDialog() {
 function handleRemovePlayer(playerName: string) {
   onRemovePlayer(playerName)
   showRemoveDialog.value = false
-  // 重新計算可用玩家
-  wheelPlayers.value = wheelPlayers.value.filter(p => p.name !== playerName)
 }
 </script>
 

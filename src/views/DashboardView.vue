@@ -12,12 +12,9 @@
     <div class="dashboard-content">
       <BattleSection
         v-if="activeTab === 'battle'"
-        :battleInfo="gameStore.currentBattle"
-        :voteResults="gameStore.voteResults"
         :selectedThemeName="selectedThemeName"
         :selectedThemePhotos="selectedThemePhotos"
-        :currentPhotoIndex="currentPhotoIndex"
-        :onNextPhoto="nextPhoto"
+        :selectedThemeAnswers="selectedThemeAnswers"
         :onStartDemo="startDemo"
       />
 
@@ -38,13 +35,6 @@
 
       <WheelSection
         v-if="activeTab === 'wheel'"
-        :wheelPlayers="gameStore.wheelPlayers"
-        :drawnPlayer="drawnPlayer"
-        :showRemoveDialog="showRemoveDialog"
-        :onDrawFromWheel="drawFromWheel"
-        :onResetWheel="resetWheel"
-        :onShowRemoveDialog="openRemoveDialog"
-        :onHideRemoveDialog="closeRemoveDialog"
         :onRemovePlayer="permanentlyRemovePlayer"
       />
     </div>
@@ -52,25 +42,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../pinia/store'
 import BattleSection from '../components/Dashboard/BattleSection.vue'
 import PlayersSection from '../components/Dashboard/PlayersSection.vue'
-import DrawSection from '../components/Dashboard/DrawSection.vue'
+import DrawSection from '../components/Dashboard/winStreakReward.vue'
 import WheelSection from '../components/Dashboard/WheelSection.vue'
 
 const gameStore = useGameStore()
 const activeTab = ref<'battle' | 'players' | 'draw' | 'wheel'>('battle')
 const drawSelectedPlayerName = ref(gameStore.players[0]?.name || '')
 const rewardOptions = ['對方秒數-3秒', '拒絕一次對戰邀請']
-const showRemoveDialog = ref(false)
-const drawnPlayer = ref<any>(null)
 
 const selectedThemePhotos = ref<string[]>([])
-const currentPhotoIndex = ref(0)
 const selectedThemeName = ref('')
+const selectedThemeAnswers = ref<string[]>([])
 const selectedBattlePlayerName = ref('')
 const opponentName = '對手'
+
+let timerInterval: number | null = null
+
+onMounted(() => {
+  timerInterval = setInterval(() => {
+    gameStore.updateTimers()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+  }
+})
 
 function startDemo() {
   gameStore.startBattle('Player 1', 'Player 2', 'https://via.placeholder.com/300x200?text=Demo+Image')
@@ -85,22 +87,16 @@ function handleThemeClick(player: any, theme: any) {
   selectedThemeName.value = theme.name
   selectedBattlePlayerName.value = player.name
   selectedThemePhotos.value = theme.photos ?? []
-  currentPhotoIndex.value = 0
+  selectedThemeAnswers.value = theme.answers ?? []
 
   if (selectedThemePhotos.value.length > 0) {
-    gameStore.startBattle(player.name, opponentName, selectedThemePhotos.value[0])
+    // 如果有抽到的挑戰者，使用它作為對手
+    const challenger = gameStore.currentChallenger?.challenger
+    const opponent = challenger ? challenger.name : opponentName
+    gameStore.startBattleWithChallenger(opponent, player.name, selectedThemePhotos.value)
   }
 
   activeTab.value = 'battle'
-}
-
-function nextPhoto() {
-  if (currentPhotoIndex.value >= selectedThemePhotos.value.length - 1) return
-  currentPhotoIndex.value += 1
-  const nextImage = selectedThemePhotos.value[currentPhotoIndex.value]
-  if (nextImage) {
-    gameStore.startBattle(selectedBattlePlayerName.value || 'Player', opponentName, nextImage)
-  }
 }
 
 function drawReward() {
@@ -114,31 +110,12 @@ function drawReward() {
   gameStore.recordDrawResult(player.name, reward)
 }
 
-function resetWheel() {
-  gameStore.resetWheel()
-  drawnPlayer.value = null
-}
-
-function drawFromWheel() {
-  if (!confirm('是否要開始抽籤？')) return
-  drawnPlayer.value = gameStore.drawFromWheel()
-}
-
 function updateDrawSelectedPlayerName(name: string) {
   drawSelectedPlayerName.value = name
 }
 
-function openRemoveDialog() {
-  showRemoveDialog.value = true
-}
-
-function closeRemoveDialog() {
-  showRemoveDialog.value = false
-}
-
 function permanentlyRemovePlayer(playerName: string) {
   gameStore.permanentlyRemovePlayer(playerName)
-  showRemoveDialog.value = false
 }
 </script>
 

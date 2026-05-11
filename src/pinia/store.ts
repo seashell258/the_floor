@@ -9,6 +9,7 @@ interface Voter {
 export interface ThemeData {
   name: string
   photos: string[] // 35 ~ 50 张照片
+  answers: string[] // 答案
   isConsumed: boolean // 已使用/消耗的主題
 }
 
@@ -45,7 +46,7 @@ export class ThemeStack {
   }
 }
 
-interface Player {
+export interface Player {
   name: string
   themeStack: ThemeStack
   correct: number
@@ -83,9 +84,13 @@ interface GameState {
   } | null
   voteResults: VoteResult | null
   drawResults: DrawResult | null
-  wheelPlayers: Player[] // 輪盤中的玩家
   eliminatedPlayers: string[] // 永久移除的玩家名稱
   currentChallenger: ChallengerResult | null
+  challengerTimer: number // 挑戰者剩餘時間
+  defenderTimer: number // 被挑戰者剩餘時間
+  currentTimerPlayer: string | null // 當前計時的玩家名字
+  isTimerRunning: boolean // 是否正在計時
+  battleWinner: string | null // 對戰勝利者
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -103,9 +108,13 @@ export const useGameStore = defineStore('game', () => {
       voters2: []
     },
     drawResults: null,
-    wheelPlayers: [], // 初始為空，稍後初始化
     eliminatedPlayers: [],
-    currentChallenger: null
+    currentChallenger: null,
+    challengerTimer: 30,
+    defenderTimer: 30,
+    currentTimerPlayer: null,
+    isTimerRunning: false,
+    battleWinner: null
   })
 
   // Getters
@@ -115,8 +124,13 @@ export const useGameStore = defineStore('game', () => {
   const voteResults = computed(() => state.value.voteResults)
   const drawResults = computed(() => state.value.drawResults)
   const activePlayers = computed(() => state.value.players.filter(p => !p.eliminated))
-  const wheelPlayers = computed(() => state.value.wheelPlayers)
+  const eliminatedPlayers = computed(() => state.value.eliminatedPlayers)
   const currentChallenger = computed(() => state.value.currentChallenger)
+  const challengerTimer = computed(() => state.value.challengerTimer)
+  const defenderTimer = computed(() => state.value.defenderTimer)
+  const currentTimerPlayer = computed(() => state.value.currentTimerPlayer)
+  const isTimerRunning = computed(() => state.value.isTimerRunning)
+  const battleWinner = computed(() => state.value.battleWinner)
 
   // Actions
   function login(userName: string) {
@@ -174,7 +188,7 @@ export const useGameStore = defineStore('game', () => {
       state.value.voteResults.voters2 = state.value.voteResults.voters2.filter(name => name !== voterName)
     }
 
-    // 为新的选项投票
+    // 
     if (playerChoice === 1 && !hasVotedFor1) {
       state.value.voteResults.votes1 += 1
       state.value.voteResults.voters1.push(voterName)
@@ -200,28 +214,10 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  function initializeWheel() {
-    state.value.wheelPlayers = state.value.players.filter(p => !state.value.eliminatedPlayers.includes(p.name))
-  }
-
-  function drawFromWheel(): Player | null {
-    if (state.value.wheelPlayers.length === 0) return null
-    const randomIndex = Math.floor(Math.random() * state.value.wheelPlayers.length)
-    const selectedPlayer = state.value.wheelPlayers[randomIndex]
-    state.value.wheelPlayers.splice(randomIndex, 1)
-    return selectedPlayer
-  }
-
-  function resetWheel() {
-    state.value.wheelPlayers = state.value.players.filter(p => !state.value.eliminatedPlayers.includes(p.name))
-  }
-
   function permanentlyRemovePlayer(playerName: string) {
     if (!state.value.eliminatedPlayers.includes(playerName)) {
       state.value.eliminatedPlayers.push(playerName)
     }
-    // 從輪盤中移除
-    state.value.wheelPlayers = state.value.wheelPlayers.filter(p => p.name !== playerName)
   }
 
   function setChallenger(player: Player) {
@@ -252,18 +248,18 @@ export const useGameStore = defineStore('game', () => {
    * 从config配置初始化所有玩家
    * @param playersConfig 玩家配置数组
    */
-  function initializePlayersFromConfig(playersConfig: Array<{ name: string; themes: Array<{ name: string; photos: string[]; isConsumed: boolean }> }>): void {
+  function initializePlayersFromConfig(playersConfig: Array<{ name: string; themes: Array<{ name: string; photos: string[]; answers: string[]; isConsumed: boolean }> }>): void {
     const initializedPlayers: Player[] = playersConfig.map(playerConfig => {
       const themeDataArray: ThemeData[] = playerConfig.themes.map(theme => ({
         name: theme.name,
         photos: theme.photos,
+        answers: theme.answers,
         isConsumed: theme.isConsumed ?? false
       }))
       return createPlayer(playerConfig.name, themeDataArray)
     })
     
     state.value.players = initializedPlayers
-    state.value.wheelPlayers = [...initializedPlayers]
     // state.value.voteResults.player1 = initializedPlayers[0]?.name || ''
     // state.value.voteResults.player2 = initializedPlayers[1]?.name || ''
   }
@@ -278,6 +274,66 @@ export const useGameStore = defineStore('game', () => {
       return player.themeStack.pop()
     }
     return undefined
+  }
+
+  function startBattleWithChallenger(challengerName: string, defenderName: string, photos: string[]) {
+    state.value.currentBattle = {
+      player1Name: challengerName,
+      player2Name: defenderName,
+      image: photos[0] || '',
+      timeRemaining: 10
+    }
+    state.value.challengerTimer = 30
+    state.value.defenderTimer = 30
+    state.value.currentTimerPlayer = challengerName
+    state.value.isTimerRunning = true
+    state.value.battleWinner = null
+  }
+
+  function startTimer(playerName: string) {
+    state.value.currentTimerPlayer = playerName
+    state.value.isTimerRunning = true
+  }
+
+  function pauseTimer() {
+    state.value.isTimerRunning = false
+  }
+
+  function switchTimer() {
+    if (state.value.currentTimerPlayer === state.value.currentBattle?.player1Name) {
+      state.value.currentTimerPlayer = state.value.currentBattle?.player2Name || null
+    } else {
+      state.value.currentTimerPlayer = state.value.currentBattle?.player1Name || null
+    }
+  }
+
+  function updateTimers() {
+    if (!state.value.isTimerRunning || !state.value.currentTimerPlayer) return
+
+    if (state.value.currentTimerPlayer === state.value.currentBattle?.player1Name) {
+      if (state.value.challengerTimer > 0) {
+        state.value.challengerTimer -= 1
+      } else {
+        state.value.battleWinner = state.value.currentBattle.player2Name
+        state.value.isTimerRunning = false
+      }
+    } else if (state.value.currentTimerPlayer === state.value.currentBattle?.player2Name) {
+      if (state.value.defenderTimer > 0) {
+        state.value.defenderTimer -= 1
+      } else {
+        state.value.battleWinner = state.value.currentBattle.player1Name
+        state.value.isTimerRunning = false
+      }
+    }
+  }
+
+  function resetBattle() {
+    state.value.currentBattle = null
+    state.value.challengerTimer = 30
+    state.value.defenderTimer = 30
+    state.value.currentTimerPlayer = null
+    state.value.isTimerRunning = false
+    state.value.battleWinner = null
   }
 
   /**
@@ -297,8 +353,13 @@ export const useGameStore = defineStore('game', () => {
     voteResults,
     drawResults,
     activePlayers,
-    wheelPlayers,
+    eliminatedPlayers,
     currentChallenger,
+    challengerTimer,
+    defenderTimer,
+    currentTimerPlayer,
+    isTimerRunning,
+    battleWinner,
     login,
     logout,
     addPlayer,
@@ -309,15 +370,18 @@ export const useGameStore = defineStore('game', () => {
     applyWinReward,
     recordDrawResult,
     resetVotes,
-    initializeWheel,
-    drawFromWheel,
-    resetWheel,
     permanentlyRemovePlayer,
     setChallenger,
     clearChallenger,
     createPlayer,
     initializePlayersFromConfig,
     popThemeForLoser,
-    getPlayerLives
+    getPlayerLives,
+    startBattleWithChallenger,
+    startTimer,
+    pauseTimer,
+    switchTimer,
+    updateTimers,
+    resetBattle
   }
 })
