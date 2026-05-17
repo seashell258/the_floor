@@ -3,10 +3,9 @@
     <h2>秦翼 the floor 知識王大賽!</h2>
 
     <div class="dashboard-header">
-      <button :class="{ active: activeTab === 'battle' }" @click="activeTab = 'battle'">開始對戰</button>
-      <button :class="{ active: activeTab === 'players' }" @click="activeTab = 'players'">玩家狀態</button>
-      <button :class="{ active: activeTab === 'draw' }" @click="activeTab = 'draw'">抽連勝獎勵</button>
-      <button :class="{ active: activeTab === 'wheel' }" @click="activeTab = 'wheel'">抽挑戰者</button>
+      <button :class="{ active: activeTab === 'getchallenger' }" @click="activeTab = 'getchallenger'">抽挑戰者</button>
+      <button :class="{ active: activeTab === 'playersList' }" @click="activeTab = 'playersList'">選擇挑戰對象</button>
+      <button :class="{ active: activeTab === 'winStreak' }" @click="activeTab = 'winStreak'">抽連勝獎勵</button>
     </div>
 
     <div class="dashboard-content">
@@ -15,17 +14,18 @@
         :selectedThemeName="selectedThemeName"
         :selectedThemePhotos="selectedThemePhotos"
         :selectedThemeAnswers="selectedThemeAnswers"
-        :onStartDemo="startDemo"
+        @battle-ended="activeTab = 'playersList'"
       />
 
       <PlayersSection
-        v-if="activeTab === 'players'"
+        v-if="activeTab === 'playersList'"
         :players="gameStore.players"
         :onThemeClick="handleThemeClick"
+        :onStartHostBattle="handleStartHostBattle"
       />
 
       <DrawSection
-        v-if="activeTab === 'draw'"
+        v-if="activeTab === 'winStreak'"
         :players="gameStore.players"
         :selectedPlayerName="drawSelectedPlayerName"
         :onSelectedPlayerChange="updateDrawSelectedPlayerName"
@@ -33,8 +33,8 @@
         :drawResults="gameStore.drawResults"
       />
 
-      <WheelSection
-        v-if="activeTab === 'wheel'"
+      <GetChallengerSection
+        v-if="activeTab === 'getchallenger'"
         :onRemovePlayer="permanentlyRemovePlayer"
       />
     </div>
@@ -47,10 +47,11 @@ import { useGameStore } from '../pinia/store'
 import BattleSection from '../components/Dashboard/BattleSection.vue'
 import PlayersSection from '../components/Dashboard/PlayersSection.vue'
 import DrawSection from '../components/Dashboard/winStreakReward.vue'
-import WheelSection from '../components/Dashboard/WheelSection.vue'
+import GetChallengerSection from '../components/Dashboard/GetChallengerSection.vue'
+import { toast } from 'vue-sonner'
 
 const gameStore = useGameStore()
-const activeTab = ref<'battle' | 'players' | 'draw' | 'wheel'>('battle')
+const activeTab = ref<'battle' | 'playersList' | 'winStreak' | 'getchallenger'>('getchallenger')
 const drawSelectedPlayerName = ref(gameStore.players[0]?.name || '')
 const rewardOptions = ['對方秒數-3秒', '拒絕一次對戰邀請']
 
@@ -58,7 +59,6 @@ const selectedThemePhotos = ref<string[]>([])
 const selectedThemeName = ref('')
 const selectedThemeAnswers = ref<string[]>([])
 const selectedBattlePlayerName = ref('')
-const opponentName = '對手'
 
 let timerInterval: number | null = null
 
@@ -74,26 +74,23 @@ onUnmounted(() => {
   }
 })
 
-function startDemo() {
-  gameStore.startBattle('Player 1', 'Player 2', 'https://via.placeholder.com/300x200?text=Demo+Image')
-  gameStore.recordVote(1, '冠維')
-  gameStore.recordVote(1, '海螺')
-  gameStore.recordVote(1, '大貓貓')
-  gameStore.recordVote(2, '小王')
-  gameStore.recordVote(2, '漁夫')
-}
-
 function handleThemeClick(player: any, theme: any) {
+  if (!gameStore.currentChallenger) {
+    toast.error('尚未抽出挑戰者', {
+      description: '請先到「抽挑戰者」抽出本輪挑戰者，再選擇對戰主題。',
+      duration: 4000,
+    })
+    return
+  }
+
   selectedThemeName.value = theme.name
   selectedBattlePlayerName.value = player.name
   selectedThemePhotos.value = theme.photos ?? []
   selectedThemeAnswers.value = theme.answers ?? []
 
   if (selectedThemePhotos.value.length > 0) {
-    // 如果有抽到的挑戰者，使用它作為對手
-    const challenger = gameStore.currentChallenger?.challenger
-    const opponent = challenger ? challenger.name : opponentName
-    gameStore.startBattleWithChallenger(opponent, player.name, selectedThemePhotos.value)
+    const challenger = gameStore.currentChallenger.challenger
+    gameStore.startBattleWithChallenger(challenger.name, player.name, selectedThemePhotos.value)
   }
 
   activeTab.value = 'battle'
@@ -116,6 +113,18 @@ function updateDrawSelectedPlayerName(name: string) {
 
 function permanentlyRemovePlayer(playerName: string) {
   gameStore.permanentlyRemovePlayer(playerName)
+}
+
+function handleStartHostBattle(challengerName: string) {
+  const hostTheme = gameStore.state.hostCurrentTheme
+  if (!hostTheme) return
+
+  selectedThemeName.value = hostTheme.name
+  selectedThemePhotos.value = hostTheme.photos
+  selectedThemeAnswers.value = hostTheme.answers ?? []
+
+  gameStore.startBattleWithChallenger(challengerName, '主持人', hostTheme.photos)
+  activeTab.value = 'battle'
 }
 </script>
 
@@ -470,68 +479,12 @@ h2 {
   background-color: #2980b9;
 }
 
-.wheel-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 1rem;
-}
-
-.wheel-controls {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.wheel-btn {
-  padding: 0.75rem 1rem;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s;
-}
-
-.wheel-btn:hover:not(:disabled) {
-  background-color: #2980b9;
-}
-
-.wheel-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-}
-
-.wheel-display {
-  min-height: 200px;
-  border: 2px dashed #bdc3c7;
-  border-radius: 12px;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .no-players {
   text-align: center;
   color: #7f8c8d;
 }
 
-.wheel-players {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-}
-
-.wheel-player {
-  background: #ecf0f1;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: bold;
-  color: #2c3e50;
-}
 
 .drawn-result {
   text-align: center;

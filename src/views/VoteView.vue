@@ -41,25 +41,7 @@
           </button>
         </div>
 
-        <div v-if="selectedThemePhotos.length > 0" class="theme-preview">
-          <div class="theme-preview-header">
-            <span class="preview-label">主題：</span>
-            <strong>{{ selectedThemeName }}</strong>
-            <span class="preview-player">玩家：{{ selectedPlayerName }}</span>
-          </div>
-          <img
-            :src="selectedThemePhotos[currentPhotoIndex]"
-            :alt="selectedThemeName"
-            class="theme-preview-image"
-          />
-          <div class="theme-preview-footer">
-            <span>{{ currentPhotoIndex + 1 }} / {{ selectedThemePhotos.length }}</span>
-            <button class="next-photo-btn" @click="nextPhoto" :disabled="currentPhotoIndex >= selectedThemePhotos.length - 1">
-              下一題
-            </button>
-          </div>
-        </div>
-        <div v-else class="voting-disabled">
+        <div v-if="!gameStore.currentBattle" class="voting-disabled">
           暫無對決
         </div>
         <div v-if="hasVoted" class="voted-message">
@@ -102,7 +84,7 @@
             <div class="player-card-header">
               <div>
                 <h4>{{ player.name }}</h4>
-                <p class="player-meta">生命數：{{ player.themeStack.size() }}</p>
+                <p class="player-meta">剩餘命數：{{ player.themeStack.items.filter((t: any) => !t.isConsumed).length }}</p>
               </div>
               <div class="player-badge">
                 <span>連勝</span>
@@ -112,18 +94,17 @@
 
             <div class="theme-list">
               <div
-                v-for="theme in player.themeStack.getAll().slice().reverse()"
+                v-for="theme in [...player.themeStack.items].reverse()"
                 :key="theme.name"
                 class="theme-pill"
                 :class="{ consumed: theme.isConsumed }"
-                @click="handleStartBattle(player, theme)"
               >
                 {{ theme.name }}
               </div>
             </div>
 
             <div class="status-badge" :class="{ active: !player.eliminated }">
-              {{ player.eliminated ? '已淘汰' : '進行中' }}
+              {{ player.eliminated ? '已淘汰' : '存活' }}
             </div>
           </div>
         </div>
@@ -138,10 +119,6 @@ import { useGameStore } from '../pinia/store'
 
 const gameStore = useGameStore()
 const activeTab = ref<'vote' | 'status'>('vote')
-const selectedThemePhotos = ref<string[]>([])
-const currentPhotoIndex = ref(0)
-const selectedThemeName = ref('')
-const selectedPlayerName = ref('')
 
 function vote(playerChoice: number) {
   const voterName = gameStore.currentVoter?.name
@@ -150,28 +127,6 @@ function vote(playerChoice: number) {
   if (hasVoted.value) return
   
   gameStore.recordVote(playerChoice, voterName)
-}
-
-function handleStartBattle(player: any, theme: any) {
-  if (!theme || !theme.photos) return
-
-  selectedPlayerName.value = player.name
-  selectedThemeName.value = theme.name
-  selectedThemePhotos.value = theme.photos
-  currentPhotoIndex.value = 0
-  activeTab.value = 'vote'
-
-  const firstPhoto = theme.photos[0] || ''
-  gameStore.startBattle(player.name, '對手', firstPhoto)
-}
-
-function nextPhoto() {
-  if (currentPhotoIndex.value >= selectedThemePhotos.value.length - 1) return
-  currentPhotoIndex.value += 1
-  const nextImage = selectedThemePhotos.value[currentPhotoIndex.value]
-  if (nextImage) {
-    gameStore.startBattle(selectedPlayerName.value || 'Player', '對手', nextImage)
-  }
 }
 
 function hasVotedFor(playerNum: number): boolean {
@@ -472,83 +427,11 @@ function getVotePercentage(playerNum: number): number {
   color: white;
   font-weight: 700;
   text-align: center;
-  cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.theme-pill:hover {
-  transform: translateY(-1px);
-  background: #d97706;
 }
 
 .theme-pill.consumed {
   background: #cbd5e1;
   color: #475569;
-}
-
-.theme-preview {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  border-radius: 12px;
-}
-
-.theme-preview-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.95rem;
-  color: #334155;
-}
-
-.preview-label {
-  color: #475569;
-}
-
-.preview-player {
-  margin-left: auto;
-  color: #1d4ed8;
-  font-weight: 700;
-}
-
-.theme-preview-image {
-  width: 100%;
-  max-height: 360px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: white;
-  border: 1px solid #cbd5e1;
-}
-
-.theme-preview-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.85rem;
-  gap: 1rem;
-}
-
-.next-photo-btn {
-  padding: 0.75rem 1rem;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s ease;
-}
-
-.next-photo-btn:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-}
-
-.next-photo-btn:hover:not(:disabled) {
-  background: #1d4ed8;
 }
 
 .status-badge {

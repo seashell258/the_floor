@@ -3,8 +3,6 @@ import { useGameStore } from './pinia/store'
 import LoginView from './views/LoginView.vue'
 import DashboardView from './views/DashboardView.vue'
 import VoteView from './views/VoteView.vue'
-import DrawView from './views/DrawView.vue'
-
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
@@ -23,12 +21,6 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/draw',
-    name: 'Draw',
-    component: DrawView,
-    meta: { requiresAuth: false }
-  },
-  {
     path: '/vote',
     name: 'Vote',
     component: VoteView,
@@ -42,7 +34,7 @@ const router = createRouter({
 })
 
 // Route guard - redirect to login if not authenticated
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const gameStore = useGameStore()
   const isLoggedIn = !!gameStore.currentVoter
   const requiresAuth = to.meta.requiresAuth !== false

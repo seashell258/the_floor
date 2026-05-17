@@ -3,24 +3,24 @@
     <h3>抽挑戰者</h3>
     <div class="wheel-inner">
       <div class="wheel-controls">
-        <button class="wheel-btn" @click="onDrawFromWheel">開始抽籤</button>
-        <button class="wheel-btn" @click="onResetWheel">開始下一輪!</button>
-        <button class="wheel-btn" @click="handleShowRemoveDialog" :disabled="wheelPlayers.length === 0">移除陣亡者</button>
+        <button class="wheel-btn" @click="handleDrawFromWheel">開始抽籤</button>
+        <button class="wheel-btn" @click="handleResetWheel">開始下一輪!</button>
+        <button class="wheel-btn" @click="handleShowRemoveDialog">移除陣亡者</button>
       </div>
 
       <div class="wheel-display">
-        <div v-if="wheelPlayers.length === 0" class="no-players">
+        <div v-if="gameStore.wheelPlayers.length === 0" class="no-players">
           輪盤已空，請按上方「開始下一輪!」
         </div>
         <div v-else class="wheel-players">
-          <div v-for="player in wheelPlayers" :key="player.name" class="wheel-player">
+          <div v-for="player in gameStore.wheelPlayers" :key="player.name" class="wheel-player">
             {{ player.name }}
           </div>
         </div>
       </div>
 
-      <div v-if="drawnPlayer" class="drawn-result">
-        <p><strong>挑戰者：</strong>{{ drawnPlayer.name }}</p>
+      <div v-if="gameStore.currentChallenger" class="drawn-result">
+        <p><strong>挑戰者：</strong>{{ gameStore.currentChallenger.challenger.name }}</p>
       </div>
     </div>
 
@@ -29,7 +29,7 @@
         <h4>移除陣亡者</h4>
         <p>選擇要永久移除的玩家：</p>
         <div class="player-list-modal">
-          <div v-for="player in wheelPlayers" :key="player.name" class="player-item">
+          <div v-for="player in gameStore.players" :key="player.name" class="player-item">
             <span>{{ player.name }}</span>
             <button class="remove-btn" @click="handleRemovePlayer(player.name)">移除</button>
           </div>
@@ -43,26 +43,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useGameStore } from '../../pinia/store'
 
 const props = defineProps<{
-  wheelPlayers: Array<any>
-  drawnPlayer: any
-  onDrawFromWheel: () => void
-  onResetWheel: () => void
   onRemovePlayer: (playerName: string) => void
 }>()
 
-const {
-  wheelPlayers,
-  drawnPlayer,
-  onDrawFromWheel,
-  onResetWheel,
-  onRemovePlayer
-} = props
-
-// 組件內部狀態
+const gameStore = useGameStore()
 const showRemoveDialog = ref(false)
+
+onMounted(() => {
+  if (!gameStore.wheelInitialized) gameStore.initWheel()
+})
+
+function handleDrawFromWheel() {
+  if (gameStore.wheelPlayers.length === 0) return
+  if (!confirm('是否要開始抽籤？')) return
+  const selected = gameStore.drawFromWheel()
+  if (selected) gameStore.setChallenger(selected)
+}
+
+function handleResetWheel() {
+  gameStore.resetWheel()
+}
 
 function handleShowRemoveDialog() {
   showRemoveDialog.value = true
@@ -73,7 +77,7 @@ function handleHideRemoveDialog() {
 }
 
 function handleRemovePlayer(playerName: string) {
-  onRemovePlayer(playerName)
+  props.onRemovePlayer(playerName)
   showRemoveDialog.value = false
 }
 </script>

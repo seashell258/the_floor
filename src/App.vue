@@ -1,5 +1,6 @@
 <template>
   <div id="app" class="app-container">
+    <Toaster position="top-center" richColors />
     <nav v-if="gameStore.currentVoter" class="navbar">
       <h1>The Cat Floor</h1>
       <div class="nav-user">
@@ -17,8 +18,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useGameStore } from './pinia/store'
-import { playersConfig } from './config/playersConfig'
+import { playersConfig, hostConfig } from './config/playersConfig'
 import { onMounted } from 'vue'
+import { Toaster } from 'vue-sonner'
+import 'vue-sonner/style.css'
 
 const router = useRouter()
 const gameStore = useGameStore()
@@ -27,6 +30,9 @@ const gameStore = useGameStore()
 onMounted(() => {
   if (gameStore.players.length === 0) {
     gameStore.initializePlayersFromConfig(playersConfig)
+  }
+  if (gameStore.hostThemes.length === 0) {
+    gameStore.initializeHostThemes(hostConfig)
   }
 })
 

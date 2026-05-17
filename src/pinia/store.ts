@@ -44,6 +44,17 @@ export class ThemeStack {
   getAll(): ThemeData[] {
     return [...this.items]
   }
+
+  activeLives(): number {
+    return this.items.filter(t => !t.isConsumed).length
+  }
+
+  peekActive(): ThemeData | undefined {
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      if (!this.items[i].isConsumed) return this.items[i]
+    }
+    return undefined
+  }
 }
 
 export interface Player {
@@ -80,17 +91,19 @@ interface GameState {
     player1Name: string
     player2Name: string
     image: string
-    timeRemaining: number
   } | null
   voteResults: VoteResult | null
   drawResults: DrawResult | null
   eliminatedPlayers: string[] // 永久移除的玩家名稱
+  wheelPlayerNames: string[] | null // null = 未初始化；[] = 全部抽完
   currentChallenger: ChallengerResult | null
   challengerTimer: number // 挑戰者剩餘時間
   defenderTimer: number // 被挑戰者剩餘時間
   currentTimerPlayer: string | null // 當前計時的玩家名字
   isTimerRunning: boolean // 是否正在計時
   battleWinner: string | null // 對戰勝利者
+  hostThemes: ThemeData[]            // 主持人所有可用主題（從 config 載入）
+  hostCurrentTheme: ThemeData | null // 主持人當前應戰主題
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -109,12 +122,15 @@ export const useGameStore = defineStore('game', () => {
     },
     drawResults: null,
     eliminatedPlayers: [],
+    wheelPlayerNames: null,
     currentChallenger: null,
     challengerTimer: 30,
     defenderTimer: 30,
     currentTimerPlayer: null,
     isTimerRunning: false,
-    battleWinner: null
+    battleWinner: null,
+    hostThemes: [],
+    hostCurrentTheme: null
   })
 
   // Getters
@@ -125,6 +141,13 @@ export const useGameStore = defineStore('game', () => {
   const drawResults = computed(() => state.value.drawResults)
   const activePlayers = computed(() => state.value.players.filter(p => !p.eliminated))
   const eliminatedPlayers = computed(() => state.value.eliminatedPlayers)
+  const wheelPlayers = computed<Player[]>(() => {
+    if (state.value.wheelPlayerNames === null) return []
+    return state.value.wheelPlayerNames
+      .map(name => state.value.players.find(p => p.name === name))
+      .filter((p): p is Player => p !== undefined)
+  })
+  const wheelInitialized = computed(() => state.value.wheelPlayerNames !== null)
   const currentChallenger = computed(() => state.value.currentChallenger)
   const challengerTimer = computed(() => state.value.challengerTimer)
   const defenderTimer = computed(() => state.value.defenderTimer)
@@ -141,17 +164,6 @@ export const useGameStore = defineStore('game', () => {
     state.value.currentVoter = null
   }
 
-  function addPlayer(player: Player) {
-    state.value.players.push(player)
-  }
-
-  function updatePlayer(name: string, updates: Partial<Player>) {
-    const player = state.value.players.find(p => p.name === name)
-    if (player) {
-      Object.assign(player, updates)
-    }
-  }
-
   function applyWinReward(playerName: string, reward: string) {
     const player = state.value.players.find(p => p.name === playerName)
     if (player) {
@@ -163,8 +175,7 @@ export const useGameStore = defineStore('game', () => {
     state.value.currentBattle = {
       player1Name,
       player2Name,
-      image,
-      timeRemaining: 10
+      image
     }
   }
 
@@ -218,6 +229,29 @@ export const useGameStore = defineStore('game', () => {
     if (!state.value.eliminatedPlayers.includes(playerName)) {
       state.value.eliminatedPlayers.push(playerName)
     }
+    if (state.value.wheelPlayerNames) {
+      state.value.wheelPlayerNames = state.value.wheelPlayerNames.filter(n => n !== playerName)
+    }
+  }
+
+  function initWheel() {
+    state.value.wheelPlayerNames = state.value.players
+      .filter(p => !state.value.eliminatedPlayers.includes(p.name))
+      .map(p => p.name)
+  }
+
+  function drawFromWheel(): Player | undefined {
+    if (!state.value.wheelPlayerNames || state.value.wheelPlayerNames.length === 0) return undefined
+    const idx = Math.floor(Math.random() * state.value.wheelPlayerNames.length)
+    const name = state.value.wheelPlayerNames.splice(idx, 1)[0]
+    return state.value.players.find(p => p.name === name)
+  }
+
+  function resetWheel() {
+    state.value.wheelPlayerNames = state.value.players
+      .filter(p => !state.value.eliminatedPlayers.includes(p.name))
+      .map(p => p.name)
+    state.value.currentChallenger = null
   }
 
   function setChallenger(player: Player) {
@@ -227,6 +261,21 @@ export const useGameStore = defineStore('game', () => {
   function clearChallenger() {
     state.value.currentChallenger = null
   }
+
+  function setHostCurrentTheme(theme: ThemeData | null) {
+    state.value.hostCurrentTheme = theme
+  }
+
+  function initializeHostThemes(themes: Array<{ name: string; photos: string[]; answers: string[] }>): void {
+    state.value.hostThemes = themes.map(t => ({
+      name: t.name,
+      photos: t.photos,
+      answers: t.answers,
+      isConsumed: false
+    }))
+  }
+
+  const hostThemes = computed(() => state.value.hostThemes)
 
   /**
    * 创建一个新玩家
@@ -260,31 +309,16 @@ export const useGameStore = defineStore('game', () => {
     })
     
     state.value.players = initializedPlayers
-    // state.value.voteResults.player1 = initializedPlayers[0]?.name || ''
-    // state.value.voteResults.player2 = initializedPlayers[1]?.name || ''
-  }
-
-  /**
-   * 当玩家输了一次后，pop掉最上面的主题
-   * @param playerName 玩家名字
-   */
-  function popThemeForLoser(playerName: string): ThemeData | undefined {
-    const player = state.value.players.find(p => p.name === playerName)
-    if (player && !player.themeStack.isEmpty()) {
-      return player.themeStack.pop()
-    }
-    return undefined
   }
 
   function startBattleWithChallenger(challengerName: string, defenderName: string, photos: string[]) {
     state.value.currentBattle = {
       player1Name: challengerName,
       player2Name: defenderName,
-      image: photos[0] || '',
-      timeRemaining: 10
+      image: photos[0] || ''
     }
-    state.value.challengerTimer = 30
-    state.value.defenderTimer = 30
+    state.value.challengerTimer = 5
+    state.value.defenderTimer = 5
     state.value.currentTimerPlayer = challengerName
     state.value.isTimerRunning = true
     state.value.battleWinner = null
@@ -307,6 +341,51 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  function processBattleResult(winnerName: string) {
+    const battle = state.value.currentBattle
+    if (!battle || state.value.battleWinner) return
+
+    const player1Name = battle.player1Name
+    const player2Name = battle.player2Name
+    const isHostInvolved = player1Name === '主持人' || player2Name === '主持人'
+
+    if (isHostInvolved) {
+      // Host battle: consume the host's current active theme regardless of outcome
+      const activeHostTheme = state.value.hostThemes.find(t => !t.isConsumed)
+      if (activeHostTheme) activeHostTheme.isConsumed = true
+      state.value.battleWinner = winnerName
+      return
+    }
+
+    // Regular player-vs-player battle
+    const defenderName = player2Name
+    const challengerName = player1Name
+    const isDefenderWin = winnerName === defenderName
+    const loserName = isDefenderWin ? challengerName : defenderName
+
+    const defender = state.value.players.find(p => p.name === defenderName)
+    const loser = state.value.players.find(p => p.name === loserName)
+    const winner = state.value.players.find(p => p.name === winnerName)
+
+    if (!defender || !loser || !winner) return
+
+    if (isDefenderWin) {
+      const defenderTopTheme = defender.themeStack.peekActive()
+      const loserTopTheme = loser.themeStack.peekActive()
+      if (loserTopTheme) loserTopTheme.isConsumed = true
+      if (defenderTopTheme) loser.themeStack.push({ ...defenderTopTheme, isConsumed: false })
+    } else {
+      const defenderTopTheme = defender.themeStack.peekActive()
+      if (defenderTopTheme) defenderTopTheme.isConsumed = true
+    }
+
+    if (loser.themeStack.items.filter(t => !t.isConsumed).length === 0) loser.eliminated = true
+
+    winner.winStreak += 1
+    loser.winStreak = 0
+    state.value.battleWinner = winnerName
+  }
+
   function updateTimers() {
     if (!state.value.isTimerRunning || !state.value.currentTimerPlayer) return
 
@@ -314,15 +393,37 @@ export const useGameStore = defineStore('game', () => {
       if (state.value.challengerTimer > 0) {
         state.value.challengerTimer -= 1
       } else {
-        state.value.battleWinner = state.value.currentBattle.player2Name
         state.value.isTimerRunning = false
+        processBattleResult(state.value.currentBattle.player2Name) // challenger time up → defender wins
       }
     } else if (state.value.currentTimerPlayer === state.value.currentBattle?.player2Name) {
       if (state.value.defenderTimer > 0) {
         state.value.defenderTimer -= 1
       } else {
-        state.value.battleWinner = state.value.currentBattle.player1Name
         state.value.isTimerRunning = false
+        processBattleResult(state.value.currentBattle.player1Name) // defender time up → challenger wins
+      }
+    }
+  }
+
+  function penalizeTimer(seconds: number) {
+    if (!state.value.isTimerRunning || !state.value.currentTimerPlayer) return
+    const battle = state.value.currentBattle
+    if (!battle) return
+
+    if (state.value.currentTimerPlayer === battle.player1Name) {
+      state.value.challengerTimer -= seconds
+      if (state.value.challengerTimer <= 0) {
+        state.value.challengerTimer = 0
+        state.value.isTimerRunning = false
+        processBattleResult(battle.player2Name)
+      }
+    } else if (state.value.currentTimerPlayer === battle.player2Name) {
+      state.value.defenderTimer -= seconds
+      if (state.value.defenderTimer <= 0) {
+        state.value.defenderTimer = 0
+        state.value.isTimerRunning = false
+        processBattleResult(battle.player1Name)
       }
     }
   }
@@ -336,15 +437,6 @@ export const useGameStore = defineStore('game', () => {
     state.value.battleWinner = null
   }
 
-  /**
-   * 获取玩家的剩余lives（即stack中剩余的theme数）
-   * @param playerName 玩家名字
-   */
-  function getPlayerLives(playerName: string): number {
-    const player = state.value.players.find(p => p.name === playerName)
-    return player ? player.themeStack.size() : 0
-  }
-
   return {
     state,
     players,
@@ -354,6 +446,8 @@ export const useGameStore = defineStore('game', () => {
     drawResults,
     activePlayers,
     eliminatedPlayers,
+    wheelPlayers,
+    wheelInitialized,
     currentChallenger,
     challengerTimer,
     defenderTimer,
@@ -362,8 +456,6 @@ export const useGameStore = defineStore('game', () => {
     battleWinner,
     login,
     logout,
-    addPlayer,
-    updatePlayer,
     startBattle,
     endBattle,
     recordVote,
@@ -375,13 +467,19 @@ export const useGameStore = defineStore('game', () => {
     clearChallenger,
     createPlayer,
     initializePlayersFromConfig,
-    popThemeForLoser,
-    getPlayerLives,
     startBattleWithChallenger,
     startTimer,
     pauseTimer,
     switchTimer,
     updateTimers,
-    resetBattle
+    resetBattle,
+    processBattleResult,
+    penalizeTimer,
+    initWheel,
+    drawFromWheel,
+    resetWheel,
+    setHostCurrentTheme,
+    initializeHostThemes,
+    hostThemes
   }
 })
