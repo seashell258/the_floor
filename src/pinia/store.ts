@@ -162,7 +162,7 @@ export const useGameStore = defineStore('game', () => {
   const isTimerRunning = computed(() => state.value.isTimerRunning)
   const battleWinner = computed(() => state.value.battleWinner)
   const tournamentWinner = computed<string | null>(() => {
-    const alive = state.value.players.filter(p => !p.eliminated)
+    const alive = activePlayers.value
     return alive.length === 1 ? alive[0].name : null
   })
 
