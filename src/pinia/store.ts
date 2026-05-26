@@ -52,7 +52,7 @@ export class ThemeStack {
 
   peekActive(): ThemeData | undefined {
     for (let i = this.items.length - 1; i >= 0; i--) {
-      if (!this.items[i].isConsumed) return this.items[i]
+      if (!this.items[i].isConsumed && this.items[i].isActivated) return this.items[i]
     }
     return undefined
   }
@@ -477,6 +477,7 @@ export const useGameStore = defineStore('game', () => {
     state.value.currentTimerPlayer = null
     state.value.isTimerRunning = false
     state.value.battleWinner = null
+    state.value.timePropBonus = {}
   }
 
   return {
