@@ -19,13 +19,25 @@
             v-for="theme in [...player.themeStack.items].reverse()"
             :key="theme.name"
             class="theme-pill"
-            :class="{ consumed: theme.isConsumed }"
-            @click="onThemeClick(player, theme)">
-            {{ theme.name }}
+            :class="themeClass(theme, player.name)"
+            @click="handleThemeClick(player, theme)">
+            <span class="theme-name">{{ theme.name }}</span>
+            <button
+              v-if="!theme.isActivated"
+              class="revival-btn"
+              @click.stop="openRevivalConfirm(player.name)"
+              title="啟用復活題"
+            >🔓</button>
           </div>
         </div>
 
-        <p v-if="player.reward" class="player-reward"><strong>Reward:</strong> {{ player.reward }}</p>
+        <div v-if="player.prop" class="prop-area">
+          <button
+            class="prop-btn"
+            @click="handlePropClick(player)"
+            :title="player.prop === 'time' ? '使用：時間+3秒' : '使用：盾牌'"
+          >{{ propLabel(player.prop) }}</button>
+        </div>
         <div class="status-indicator" :class="{ active: !player.eliminated }">
           {{ player.eliminated ? '已淘汰' : '存活' }}
         </div>
@@ -79,12 +91,25 @@
         </button>
       </div>
     </div>
+
+    <!-- Revival activation confirm modal -->
+    <div v-if="revivalConfirmPlayer" class="modal-overlay" @click.self="revivalConfirmPlayer = null">
+      <div class="modal-content">
+        <h4>啟用復活題？</h4>
+        <p>確認啟用 <strong>{{ revivalConfirmPlayer }}</strong> 的第四主題嗎？</p>
+        <div class="modal-actions">
+          <button class="cancel-btn" @click="revivalConfirmPlayer = null">取消</button>
+          <button class="confirm-btn" @click="confirmRevival">確認啟用</button>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useGameStore } from '../../pinia/store'
+import { getThemeClass } from '../../utils/themeUtils'
 
 const props = defineProps<{
   players: Array<any>
@@ -92,12 +117,49 @@ const props = defineProps<{
   onStartHostBattle: (challengerName: string) => void
 }>()
 
-const { players, onThemeClick } = props
-
 const gameStore = useGameStore()
 const isPanelOpen = ref(false)
 const selectedChallengerName = ref('')
 const selectedHostThemeKey = ref('')
+const revivalConfirmPlayer = ref<string | null>(null)
+
+const selectableKeys = computed(() =>
+  gameStore.currentChallenger ? gameStore.selectableThemeKeys : null
+)
+
+function themeClass(theme: any, playerName: string): string {
+  return getThemeClass(theme, playerName, selectableKeys.value)
+}
+
+function handleThemeClick(player: any, theme: any): void {
+  const cls = themeClass(theme, player.name)
+  if (cls === 'consumed' || cls === 'revival-locked' || cls === 'temp-locked') return
+  props.onThemeClick(player, theme)
+}
+
+function propLabel(prop: 'time' | 'shield'): string {
+  return prop === 'time' ? '⏱' : '🛡'
+}
+
+function handlePropClick(player: any): void {
+  if (!player.prop) return
+  if (player.prop === 'time') {
+    gameStore.applyTimeProp(player.name)
+  } else {
+    gameStore.consumeProp(player.name)
+  }
+}
+
+function openRevivalConfirm(playerName: string): void {
+  revivalConfirmPlayer.value = playerName
+}
+
+function confirmRevival(): void {
+  if (revivalConfirmPlayer.value) {
+    gameStore.activateRevivalTheme(revivalConfirmPlayer.value)
+    revivalConfirmPlayer.value = null
+  }
+}
 
 function openPanel() {
   if (!selectedChallengerName.value && gameStore.activePlayers.length > 0) {
@@ -218,6 +280,143 @@ function handleStartDuel() {
 .theme-pill.consumed {
   background: #cbd5e1;
   color: #475569;
+}
+
+.theme-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.theme-name {
+  flex: 1;
+  text-align: center;
+}
+
+/* Temporarily locked: not the top theme, or challenger's own themes */
+.theme-pill.temp-locked {
+  background: #fde68a;
+  color: #92400e;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.theme-pill.temp-locked:hover {
+  transform: none;
+  background: #fde68a;
+}
+
+/* Revival theme not yet activated */
+.theme-pill.revival-locked {
+  background: #cbd5e1;
+  color: #475569;
+  cursor: not-allowed;
+}
+
+.theme-pill.revival-locked:hover {
+  transform: none;
+  background: #cbd5e1;
+}
+
+.revival-btn {
+  background: none;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.revival-btn:hover {
+  background: #e2e8f0;
+}
+
+/* Prop display area */
+.prop-area {
+  margin-bottom: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.prop-btn {
+  font-size: 1.5rem;
+  background: none;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.prop-btn:hover {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+/* Confirm modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-content {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content h4 {
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+}
+
+.modal-content p {
+  margin: 0 0 1.25rem 0;
+  color: #374151;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.cancel-btn {
+  padding: 0.5rem 1rem;
+  background: #e5e7eb;
+  color: #374151;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #d1d5db;
+}
+
+.confirm-btn {
+  padding: 0.5rem 1rem;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.confirm-btn:hover {
+  background: #6d28d9;
 }
 
 .player-reward {
