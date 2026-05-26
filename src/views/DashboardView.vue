@@ -53,7 +53,7 @@ import { toast } from 'vue-sonner'
 const gameStore = useGameStore()
 const activeTab = ref<'battle' | 'playersList' | 'winStreak' | 'getchallenger'>('getchallenger')
 const drawSelectedPlayerName = ref(gameStore.players[0]?.name || '')
-const rewardOptions = ['對方秒數-3秒', '拒絕一次對戰邀請']
+const rewardOptions: Array<'time' | 'shield'> = ['time', 'shield']
 
 const selectedThemePhotos = ref<string[]>([])
 const selectedThemeName = ref('')
@@ -99,12 +99,12 @@ function handleThemeClick(player: any, theme: any) {
 function drawReward() {
   if (!confirm('是否要開始抽獎？')) return
 
-  const reward = rewardOptions[Math.floor(Math.random() * rewardOptions.length)]
+  const prop = rewardOptions[Math.floor(Math.random() * rewardOptions.length)]
   const player = gameStore.players.find(p => p.name === drawSelectedPlayerName.value)
   if (!player) return
 
-  gameStore.applyWinReward(player.name, reward)
-  gameStore.recordDrawResult(player.name, reward)
+  gameStore.applyProp(player.name, prop)
+  gameStore.recordDrawResult(player.name, prop === 'time' ? '⏱ 時間+3秒' : '🛡 盾牌')
 }
 
 function updateDrawSelectedPlayerName(name: string) {
