@@ -11,6 +11,7 @@ export interface ThemeData {
   photos: string[] // 35 ~ 50 张照片
   answers: string[] // 答案
   isConsumed: boolean // 已使用/消耗的主題
+  isActivated: boolean
 }
 
 // Theme Stack类 - 存储ThemeData对象
@@ -266,12 +267,13 @@ export const useGameStore = defineStore('game', () => {
     state.value.hostCurrentTheme = theme
   }
 
-  function initializeHostThemes(themes: Array<{ name: string; photos: string[]; answers: string[] }>): void {
+  function initializeHostThemes(themes: Array<{ name: string; photos: string[]; answers: string[]; isActivated: boolean }>): void {
     state.value.hostThemes = themes.map(t => ({
       name: t.name,
       photos: t.photos,
       answers: t.answers,
-      isConsumed: false
+      isConsumed: false,
+      isActivated: t.isActivated ?? true
     }))
   }
 
@@ -297,17 +299,18 @@ export const useGameStore = defineStore('game', () => {
    * 从config配置初始化所有玩家
    * @param playersConfig 玩家配置数组
    */
-  function initializePlayersFromConfig(playersConfig: Array<{ name: string; themes: Array<{ name: string; photos: string[]; answers: string[]; isConsumed: boolean }> }>): void {
+  function initializePlayersFromConfig(playersConfig: Array<{ name: string; themes: Array<{ name: string; photos: string[]; answers: string[]; isConsumed: boolean; isActivated: boolean }> }>): void {
     const initializedPlayers: Player[] = playersConfig.map(playerConfig => {
       const themeDataArray: ThemeData[] = playerConfig.themes.map(theme => ({
         name: theme.name,
         photos: theme.photos,
         answers: theme.answers,
-        isConsumed: theme.isConsumed ?? false
+        isConsumed: theme.isConsumed ?? false,
+        isActivated: theme.isActivated ?? true
       }))
       return createPlayer(playerConfig.name, themeDataArray)
     })
-    
+
     state.value.players = initializedPlayers
   }
 
