@@ -24,14 +24,7 @@
             </div>
           </div>
         </div>
-        <picture>
-          <source :srcset="`${currentPhoto}.avif`" type="image/avif">
-          <source :srcset="`${currentPhoto}.webp`" type="image/webp">
-          <source :srcset="`${currentPhoto}.jpg`" type="image/jpeg">
-          <source :srcset="`${currentPhoto}.png`" type="image/png">
-          <source :srcset="`${currentPhoto}.jpeg`" type="image/jpeg">
-          <img :src="`${currentPhoto}.jpg`" :alt="currentPhoto" class="battle-image">
-        </picture>
+        <img :src="currentPhotoSrc" :alt="currentPhoto" class="battle-image" @error="onPhotoError">
         <div v-if="battleWinner" class="result-panel">
           <div class="winner-announcement">
             🏆 {{ battleWinner }} 勝利！
@@ -102,9 +95,22 @@ const battleWinner = computed(() => gameStore.battleWinner)
 
 const currentPhotoIndex = ref(0)
 const showAnswer = ref(false)
-const currentAnswer = ref('')
 
+const PHOTO_FORMATS = ['avif', 'webp', 'jpg', 'png', 'jpeg']
+const photoFormatIndex = ref(0)
 const currentPhoto = computed(() => selectedThemePhotos.value[currentPhotoIndex.value] ?? '')
+const currentPhotoSrc = computed(() => `${currentPhoto.value}.${PHOTO_FORMATS[photoFormatIndex.value]}`)
+
+function onPhotoError() {
+  if (photoFormatIndex.value < PHOTO_FORMATS.length - 1) {
+    photoFormatIndex.value++
+  }
+}
+
+watch(currentPhoto, () => {
+  photoFormatIndex.value = 0
+})
+const currentAnswer = ref('')
 
 watch(
   selectedThemePhotos,
