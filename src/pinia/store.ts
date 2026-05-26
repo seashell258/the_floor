@@ -273,7 +273,7 @@ export const useGameStore = defineStore('game', () => {
       photos: t.photos,
       answers: t.answers,
       isConsumed: false,
-      isActivated: t.isActivated ?? true
+      isActivated: true
     }))
   }
 
