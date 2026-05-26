@@ -64,7 +64,7 @@ export interface Player {
   correct: number
   eliminated: boolean
   winStreak: number
-  reward: string | null
+  prop: 'time' | 'shield' | null
 }
 
 interface VoteResult {
@@ -165,11 +165,9 @@ export const useGameStore = defineStore('game', () => {
     state.value.currentVoter = null
   }
 
-  function applyWinReward(playerName: string, reward: string) {
+  function applyProp(playerName: string, prop: 'time' | 'shield') {
     const player = state.value.players.find(p => p.name === playerName)
-    if (player) {
-      player.reward = reward
-    }
+    if (player) player.prop = prop
   }
 
   function startBattle(player1Name: string, player2Name: string, image: string) {
@@ -291,7 +289,7 @@ export const useGameStore = defineStore('game', () => {
       correct: 0,
       eliminated: false,
       winStreak: 0,
-      reward: null
+      prop: null
     }
   }
 
@@ -462,7 +460,7 @@ export const useGameStore = defineStore('game', () => {
     startBattle,
     endBattle,
     recordVote,
-    applyWinReward,
+    applyProp,
     recordDrawResult,
     resetVotes,
     permanentlyRemovePlayer,
