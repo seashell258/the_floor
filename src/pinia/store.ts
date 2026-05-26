@@ -357,8 +357,8 @@ export const useGameStore = defineStore('game', () => {
       player2Name: defenderName,
       image: photos[0] || ''
     }
-    state.value.challengerTimer = 5 + challengerBonus
-    state.value.defenderTimer   = 5 + defenderBonus
+    state.value.challengerTimer = 30 + challengerBonus
+    state.value.defenderTimer   = 30 + defenderBonus
     delete state.value.timePropBonus[challengerName]
     delete state.value.timePropBonus[defenderName]
     state.value.currentTimerPlayer = challengerName
@@ -413,15 +413,18 @@ export const useGameStore = defineStore('game', () => {
 
     if (isDefenderWin) {
       const defenderTopTheme = defender.themeStack.peekActive()
-      const loserTopTheme = loser.themeStack.peekActive()
-      if (loserTopTheme) loserTopTheme.isConsumed = true
-      if (defenderTopTheme) loser.themeStack.push({ ...defenderTopTheme, isConsumed: false })
+      const challengerTopTheme = loser.themeStack.peekActive()
+      if (defenderTopTheme) defenderTopTheme.isConsumed = true
+      if (challengerTopTheme) {
+        challengerTopTheme.isConsumed = true
+        winner.themeStack.push({ ...challengerTopTheme, isConsumed: false })
+      }
     } else {
       const defenderTopTheme = defender.themeStack.peekActive()
       if (defenderTopTheme) defenderTopTheme.isConsumed = true
     }
 
-    if (loser.themeStack.items.filter(t => !t.isConsumed).length === 0) loser.eliminated = true
+    if (loser.themeStack.items.filter(t => !t.isConsumed && t.isActivated).length === 0) loser.eliminated = true
 
     winner.winStreak += 1
     loser.winStreak = 0
