@@ -56,6 +56,10 @@ export class ThemeStack {
     }
     return undefined
   }
+
+  activeCount(): number {
+    return this.items.filter(t => !t.isConsumed && t.isActivated).length
+  }
 }
 
 export interface Player {
@@ -424,7 +428,7 @@ export const useGameStore = defineStore('game', () => {
       if (defenderTopTheme) defenderTopTheme.isConsumed = true
     }
 
-    if (loser.themeStack.items.filter(t => !t.isConsumed && t.isActivated).length === 0) loser.eliminated = true
+    if (loser.themeStack.activeCount() === 0) loser.eliminated = true
 
     winner.winStreak += 1
     loser.winStreak = 0
