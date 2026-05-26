@@ -9,6 +9,9 @@ The application uses Pinia for centralized state management, ensuring all data i
 主要的事情都發生在 dashboard。 
 抽挑戰者 -> 挑戰者去"玩家狀態" 頁面挑戰它自己以外的玩家 -> 開始battle (這次遊戲的主題就會是被選中的玩家的第一個主題)
 
+battle 規則:
+理論上一開始顯示的是遊玩主題的 1.jpg 按下下一題後應該要顯示2.jpg 一路往下 直到有一方秒數耗盡
+
 battle 後
 被挑戰方如果勝利，被挑戰方第一個主題會變為 對方的第一順位主題 。
 挑戰者的第一順位主題則會被消耗掉 (給他一個 false boolean，並且玩家狀態 section 裡面渲染時，將 false 的theme渲染為灰色)
