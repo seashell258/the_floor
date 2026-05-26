@@ -105,6 +105,7 @@ interface GameState {
   battleWinner: string | null // 對戰勝利者
   hostThemes: ThemeData[]            // 主持人所有可用主題（從 config 載入）
   hostCurrentTheme: ThemeData | null // 主持人當前應戰主題
+  timePropBonus: Record<string, number>
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -131,7 +132,8 @@ export const useGameStore = defineStore('game', () => {
     isTimerRunning: false,
     battleWinner: null,
     hostThemes: [],
-    hostCurrentTheme: null
+    hostCurrentTheme: null,
+    timePropBonus: {}
   })
 
   // Getters
@@ -277,6 +279,41 @@ export const useGameStore = defineStore('game', () => {
 
   const hostThemes = computed(() => state.value.hostThemes)
 
+  const selectableThemeKeys = computed<Set<string>>(() => {
+    const keys = new Set<string>()
+    const challengerName = state.value.currentChallenger?.challenger.name ?? null
+    for (const player of state.value.players) {
+      if (player.eliminated) continue
+      if (player.name === challengerName) continue
+      const items = player.themeStack.items
+      for (let i = items.length - 1; i >= 0; i--) {
+        const t = items[i]
+        if (!t.isConsumed && t.isActivated) {
+          keys.add(`${player.name}:${t.name}`)
+          break
+        }
+      }
+    }
+    return keys
+  })
+
+  function activateRevivalTheme(playerName: string): void {
+    const player = state.value.players.find(p => p.name === playerName)
+    if (!player) return
+    const revivalTheme = player.themeStack.items.find(t => !t.isActivated)
+    if (revivalTheme) revivalTheme.isActivated = true
+  }
+
+  function consumeProp(playerName: string): void {
+    const player = state.value.players.find(p => p.name === playerName)
+    if (player) player.prop = null
+  }
+
+  function applyTimeProp(playerName: string): void {
+    state.value.timePropBonus[playerName] = (state.value.timePropBonus[playerName] ?? 0) + 3
+    consumeProp(playerName)
+  }
+
   /**
    * 创建一个新玩家
    * @param name 玩家名字
@@ -313,13 +350,17 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function startBattleWithChallenger(challengerName: string, defenderName: string, photos: string[]) {
+    const challengerBonus = state.value.timePropBonus[challengerName] ?? 0
+    const defenderBonus   = state.value.timePropBonus[defenderName]   ?? 0
     state.value.currentBattle = {
       player1Name: challengerName,
       player2Name: defenderName,
       image: photos[0] || ''
     }
-    state.value.challengerTimer = 5
-    state.value.defenderTimer = 5
+    state.value.challengerTimer = 5 + challengerBonus
+    state.value.defenderTimer   = 5 + defenderBonus
+    delete state.value.timePropBonus[challengerName]
+    delete state.value.timePropBonus[defenderName]
     state.value.currentTimerPlayer = challengerName
     state.value.isTimerRunning = true
     state.value.battleWinner = null
@@ -481,6 +522,10 @@ export const useGameStore = defineStore('game', () => {
     resetWheel,
     setHostCurrentTheme,
     initializeHostThemes,
-    hostThemes
+    hostThemes,
+    selectableThemeKeys,
+    activateRevivalTheme,
+    consumeProp,
+    applyTimeProp
   }
 })
