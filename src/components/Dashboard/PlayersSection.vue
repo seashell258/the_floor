@@ -270,6 +270,10 @@ function handleStartDuel() {
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
 }
 
 .theme-pill:hover {
@@ -280,13 +284,6 @@ function handleStartDuel() {
 .theme-pill.consumed {
   background: #cbd5e1;
   color: #475569;
-}
-
-.theme-pill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
 }
 
 .theme-name {
@@ -417,12 +414,6 @@ function handleStartDuel() {
 
 .confirm-btn:hover {
   background: #6d28d9;
-}
-
-.player-reward {
-  margin: 0 0 0.75rem 0;
-  color: #334155;
-  font-size: 0.95rem;
 }
 
 .status-indicator {
