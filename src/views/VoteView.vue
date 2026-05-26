@@ -97,10 +97,16 @@
                 v-for="theme in [...player.themeStack.items].reverse()"
                 :key="theme.name"
                 class="theme-pill"
-                :class="{ consumed: theme.isConsumed }"
+                :class="getThemeClass(theme, player.name, selectableKeys)"
               >
                 {{ theme.name }}
               </div>
+            </div>
+
+            <div v-if="player.prop" class="prop-area">
+              <span class="prop-icon" :title="player.prop === 'time' ? '時間+3秒' : '盾牌'">
+                {{ player.prop === 'time' ? '⏱' : '🛡' }}
+              </span>
             </div>
 
             <div class="status-badge" :class="{ active: !player.eliminated }">
@@ -116,9 +122,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '../pinia/store'
+import { getThemeClass } from '../utils/themeUtils'
 
 const gameStore = useGameStore()
 const activeTab = ref<'vote' | 'status'>('vote')
+
+const selectableKeys = computed(() =>
+  gameStore.currentChallenger ? gameStore.selectableThemeKeys : null
+)
 
 function vote(playerChoice: number) {
   const voterName = gameStore.currentVoter?.name
@@ -432,6 +443,26 @@ function getVotePercentage(playerNum: number): number {
 .theme-pill.consumed {
   background: #cbd5e1;
   color: #475569;
+}
+
+.theme-pill.temp-locked {
+  background: #fde68a;
+  color: #92400e;
+  opacity: 0.75;
+}
+
+.theme-pill.revival-locked {
+  background: #cbd5e1;
+  color: #475569;
+}
+
+.prop-area {
+  margin-bottom: 0.75rem;
+}
+
+.prop-icon {
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .status-badge {
