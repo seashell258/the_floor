@@ -235,6 +235,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function permanentlyRemovePlayer(playerName: string) {
+    const player = state.value.players.find(p => p.name === playerName)
+    if (player) player.eliminated = true
     if (!state.value.eliminatedPlayers.includes(playerName)) {
       state.value.eliminatedPlayers.push(playerName)
     }
