@@ -24,7 +24,14 @@
             </div>
           </div>
         </div>
-        <img :src="currentPhoto" :alt="currentPhoto" class="battle-image" />
+        <picture>
+          <source :srcset="`${currentPhoto}.avif`" type="image/avif">
+          <source :srcset="`${currentPhoto}.webp`" type="image/webp">
+          <source :srcset="`${currentPhoto}.jpg`" type="image/jpeg">
+          <source :srcset="`${currentPhoto}.png`" type="image/png">
+          <source :srcset="`${currentPhoto}.jpeg`" type="image/jpeg">
+          <img :src="`${currentPhoto}.jpg`" :alt="currentPhoto" class="battle-image">
+        </picture>
         <div v-if="battleWinner" class="result-panel">
           <div class="winner-announcement">
             🏆 {{ battleWinner }} 勝利！
@@ -127,7 +134,6 @@ const skipQuestion = () => {
   setTimeout(() => {
     showAnswer.value = false
     currentAnswer.value = ''
-    gameStore.switchTimer()
     gameStore.startTimer(gameStore.currentTimerPlayer || '')
   }, 800)
 }

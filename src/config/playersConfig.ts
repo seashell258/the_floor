@@ -3,10 +3,10 @@
  * 每个玩家有4个主题，每个主题下有35~50张照片
  */
 
-// 动态生成照片路径的辅助函数
+// 動態生成照片 base 路徑（不含副檔名），由渲染端依 avif > webp > jpg > png > jpeg 偏好順序選用
 function generatePhotoPaths(playerName: string, themeName: string, count: number): string[] {
     return Array.from({ length: count }, (_, i) =>
-        `/${playerName}/${themeName}/${i + 1}.jpg`
+        `/${playerName}/${themeName}/${i + 1}`
     )
 }
 
