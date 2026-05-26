@@ -2,6 +2,10 @@
   <div class="dashboard">
     <h2>秦翼 the floor 知識王大賽!</h2>
 
+    <div v-if="gameStore.tournamentWinner" class="tournament-winner-banner">
+      🏆 {{ gameStore.tournamentWinner }} 是最後存活者！
+    </div>
+
     <div class="dashboard-header">
       <button :class="{ active: activeTab === 'getchallenger' }" @click="activeTab = 'getchallenger'">抽挑戰者</button>
       <button :class="{ active: activeTab === 'playersList' }" @click="activeTab = 'playersList'">選擇挑戰對象</button>
@@ -575,5 +579,16 @@ h2 {
 
 .cancel-btn:hover {
   background: #7f8c8d;
+}
+
+.tournament-winner-banner {
+  background: #16a34a;
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 8px;
+  margin-bottom: 1rem;
 }
 </style>
