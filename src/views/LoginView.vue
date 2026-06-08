@@ -48,31 +48,34 @@ function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .login-card {
-  background: white;
+  background: var(--bg-panel);
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 100%;
+  border: 1px solid var(--glow);
+  box-shadow: 0 0 40px var(--glow-30);
   width: 90%;
   max-width: 400px;
   text-align: center;
+  animation: fade-slide-up 0.4s ease-out;
 }
 
 h1 {
   margin: 0 0 0.5rem 0;
-  color: #2c3e50;
+  color: var(--glow);
   font-size: 2rem;
-  font-weight: bold;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 24px var(--glow-30);
 }
 
 .subtitle {
   margin: 0 0 2rem 0;
-  color: #7f8c8d;
+  color: var(--text-muted);
   font-size: 1rem;
 }
 
@@ -83,9 +86,12 @@ h1 {
 .name-input {
   width: 100%;
   padding: 1rem;
-  border: 2px solid #ecf0f1;
+  background: var(--bg-surface);
+  border: 1px solid rgba(25, 233, 255, 0.25);
   border-radius: 8px;
   font-size: 1rem;
+  color: var(--text);
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
   box-sizing: border-box;
   transition: all 0.3s;
   -webkit-appearance: none;
@@ -95,25 +101,28 @@ h1 {
 
 .name-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--glow);
+  box-shadow: 0 0 0 3px var(--glow-10);
 }
 
 .name-input::placeholder {
-  color: #bdc3c7;
+  color: var(--text-muted);
 }
 
 .login-btn {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--glow);
+  color: #000d2b;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   touch-action: manipulation;
 }
 
@@ -121,21 +130,22 @@ h1 {
   transform: scale(0.98);
 }
 
+.login-btn:hover:not(:disabled) {
+  background: #3df5ff;
+}
+
 .login-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-/* Mobile optimization */
 @media (min-width: 768px) {
   .login-card {
     padding: 3rem;
   }
-
   h1 {
     font-size: 2.5rem;
   }
-
   .login-btn {
     padding: 1.2rem;
     font-size: 1.1rem;
