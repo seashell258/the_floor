@@ -84,10 +84,20 @@ function handleRemovePlayer(playerName: string) {
 
 <style scoped>
 .section {
-  background: white;
+  background: var(--bg-panel);
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glow);
+  box-shadow: 0 0 20px var(--glow-10);
+}
+
+.section h3 {
+  margin: 0 0 0 0;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 1rem;
 }
 
 .wheel-inner {
@@ -105,27 +115,46 @@ function handleRemovePlayer(playerName: string) {
 
 .wheel-btn {
   padding: 0.75rem 1rem;
-  background: #3498db;
-  color: white;
-  border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.85rem;
+  transition: all 0.2s;
 }
 
-.wheel-btn:hover:not(:disabled) {
-  background-color: #2980b9;
+.wheel-btn:first-child {
+  background: var(--glow);
+  color: #000d2b;
+  border: none;
+}
+
+.wheel-btn:first-child:hover:not(:disabled) {
+  background: #3df5ff;
+}
+
+.wheel-btn:not(:first-child) {
+  background: transparent;
+  color: var(--glow);
+  border: 1px solid var(--glow);
+}
+
+.wheel-btn:not(:first-child):hover:not(:disabled) {
+  background: var(--glow-10);
 }
 
 .wheel-btn:disabled {
-  background: #bdc3c7;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border-color: transparent;
   cursor: not-allowed;
 }
 
 .wheel-display {
   min-height: 200px;
-  border: 2px dashed #bdc3c7;
+  border: 1px dashed rgba(25, 233, 255, 0.35);
   border-radius: 12px;
   padding: 1rem;
   display: flex;
@@ -135,7 +164,7 @@ function handleRemovePlayer(playerName: string) {
 
 .no-players {
   text-align: center;
-  color: #7f8c8d;
+  color: var(--text-muted);
 }
 
 .wheel-players {
@@ -146,25 +175,29 @@ function handleRemovePlayer(playerName: string) {
 }
 
 .wheel-player {
-  background: #ecf0f1;
+  background: var(--bg-surface);
+  border: 1px solid var(--glow-30);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-weight: bold;
-  color: #2c3e50;
+  color: var(--glow);
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .drawn-result {
   text-align: center;
   padding: 1rem;
-  background: #f8fbff;
+  background: var(--bg-surface);
   border-radius: 8px;
-  border: 1px solid #d7e7fb;
+  border: 1px solid var(--glow);
+  box-shadow: 0 0 12px var(--glow-30);
 }
 
 .drawn-result p {
   margin: 0;
   font-size: 1.2rem;
-  color: #2c3e50;
+  color: var(--glow);
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .modal-overlay {
@@ -173,7 +206,7 @@ function handleRemovePlayer(playerName: string) {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,17 +214,19 @@ function handleRemovePlayer(playerName: string) {
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-panel);
   padding: 1.5rem;
   border-radius: 12px;
+  border: 1px solid var(--glow-30);
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .modal-content h4 {
   margin: 0 0 1rem 0;
-  color: #2c3e50;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .player-list-modal {
@@ -205,7 +240,8 @@ function handleRemovePlayer(playerName: string) {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  border-bottom: 1px solid #ecf0f1;
+  border-bottom: 1px solid rgba(25, 233, 255, 0.1);
+  color: var(--text);
 }
 
 .player-item:last-child {
@@ -214,7 +250,7 @@ function handleRemovePlayer(playerName: string) {
 
 .remove-btn {
   padding: 0.25rem 0.5rem;
-  background: #e74c3c;
+  background: var(--danger);
   color: white;
   border: none;
   border-radius: 4px;
@@ -223,7 +259,7 @@ function handleRemovePlayer(playerName: string) {
 }
 
 .remove-btn:hover {
-  background: #c0392b;
+  opacity: 0.85;
 }
 
 .modal-actions {
@@ -233,14 +269,16 @@ function handleRemovePlayer(playerName: string) {
 
 .cancel-btn {
   padding: 0.5rem 1rem;
-  background: #95a5a6;
-  color: white;
-  border: none;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid rgba(25, 233, 255, 0.2);
   border-radius: 6px;
   cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  transition: color 0.15s;
 }
 
 .cancel-btn:hover {
-  background: #7f8c8d;
+  color: var(--text);
 }
 </style>
