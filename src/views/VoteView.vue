@@ -175,16 +175,14 @@ function getVotePercentage(playerNum: number): number {
   max-width: 100%;
 }
 
-
-/* Tab Navigation */
 .tab-navigation {
   display: flex;
   gap: 0;
   margin-bottom: 1.5rem;
   border-radius: 10px;
   overflow: hidden;
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-panel);
+  border: 1px solid rgba(25, 233, 255, 0.2);
 }
 
 .tab-button {
@@ -194,21 +192,26 @@ function getVotePercentage(playerNum: number): number {
   border: none;
   background: transparent;
   font-weight: bold;
-  color: #7f8c8d;
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.25s ease;
+  border-bottom: 2px solid transparent;
 }
 
 .tab-button.active {
-  color: #3498db;
-  background: white;
+  color: var(--glow);
+  background: var(--glow-10);
+  border-bottom-color: var(--glow);
 }
 
 .tab-button:hover {
-  background: #f0f4fb;
+  color: var(--text);
+  background: rgba(25, 233, 255, 0.05);
 }
 
-/* Vote Container - Mobile Single Column */
 .vote-container {
   display: flex;
   flex-direction: column;
@@ -216,22 +219,24 @@ function getVotePercentage(playerNum: number): number {
 }
 
 .section {
-  background: white;
+  background: var(--bg-panel);
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glow-30);
 }
 
 .section h3 {
   margin-top: 0;
   margin-bottom: 1.5rem;
-  color: #2c3e50;
+  color: var(--text);
   font-size: 1.1rem;
-  border-bottom: 2px solid #3498db;
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid var(--glow);
   padding-bottom: 0.75rem;
 }
 
-/* Vote Buttons - Mobile Optimized */
 .vote-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -240,57 +245,62 @@ function getVotePercentage(playerNum: number): number {
 
 .vote-btn {
   padding: 1.2rem 1rem;
-  background-color: #3498db;
-  color: white;
+  background: var(--glow);
+  color: #000d2b;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  transition: all 0.3s;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.2s;
   font-size: 1rem;
   touch-action: manipulation;
 }
 
 .vote-btn:active:not(:disabled) {
-  transform: scale(0.98);
-  background-color: #2980b9;
+  transform: scale(0.97);
+}
+
+.vote-btn:hover:not(:disabled):not(.voted) {
+  background: #3df5ff;
 }
 
 .vote-btn.voted {
-  background-color: #27ae60;
-  border: 2px solid #2ecc71;
+  background: var(--glow-10);
+  border: 2px solid var(--glow);
+  color: var(--glow);
 }
 
-.vote-btn.voted:active {
-  background-color: #229954;
-}
-
-.vote-btn:disabled {
-  background-color: #bdc3c7;
+.vote-btn:disabled:not(.voted) {
+  background: var(--bg-surface);
+  color: var(--text-muted);
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 .voting-disabled {
   padding: 1.5rem 1rem;
-  background-color: #ecf0f1;
+  background: var(--bg-surface);
   border-radius: 6px;
   text-align: center;
-  color: #7f8c8d;
+  color: var(--text-muted);
   font-size: 1rem;
 }
 
 .voted-message {
   margin-top: 1rem;
   padding: 1rem;
-  background-color: #d5f4e6;
-  color: #27ae60;
+  background: var(--glow-10);
+  color: var(--glow);
+  border: 1px solid var(--glow-30);
   border-radius: 6px;
   text-align: center;
   font-weight: bold;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
-/* Vote Results - Mobile Optimized */
 .vote-results {
   padding: 0;
 }
@@ -307,13 +317,14 @@ function getVotePercentage(playerNum: number): number {
   display: block;
   font-weight: bold;
   margin-bottom: 0.5rem;
-  color: #2c3e50;
+  color: var(--text);
   font-size: 1rem;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .result-bar {
   height: 40px;
-  background-color: #ecf0f1;
+  background: var(--bg-surface);
   border-radius: 6px;
   overflow: hidden;
   margin: 0.75rem 0;
@@ -321,12 +332,13 @@ function getVotePercentage(playerNum: number): number {
 
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3498db, #2980b9);
+  background: var(--glow);
+  box-shadow: 0 0 8px var(--glow-30);
   transition: width 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #000d2b;
   font-weight: bold;
   font-size: 0.9rem;
   min-width: 30px;
@@ -335,32 +347,33 @@ function getVotePercentage(playerNum: number): number {
 .vote-number {
   display: block;
   font-size: 0.95rem;
-  color: #2c3e50;
+  color: var(--text);
   font-weight: bold;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .voters-list {
   margin-top: 0.75rem;
   padding: 0.75rem;
-  background-color: #f0f7ff;
+  background: var(--bg-surface);
   border-radius: 4px;
   font-size: 0.85rem;
-  border-left: 3px solid #3498db;
+  border-left: 3px solid var(--glow);
 }
 
 .voters-label {
-  color: #555;
+  color: var(--text-muted);
   font-weight: bold;
   display: block;
   margin-bottom: 0.3rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .voters-names {
-  color: #2c3e50;
+  color: var(--text);
   word-break: break-word;
 }
 
-/* Player Status - Mobile Optimized */
 .player-list {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -369,10 +382,9 @@ function getVotePercentage(playerNum: number): number {
 
 .player-card {
   padding: 1rem;
-  background-color: #ffffff;
+  background: var(--bg-surface);
   border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--glow-30);
   transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
@@ -381,9 +393,8 @@ function getVotePercentage(playerNum: number): number {
 }
 
 .player-card.eliminated {
-  opacity: 0.55;
-  filter: grayscale(0.35);
-  border-color: #e74c3c;
+  opacity: 0.5;
+  border-color: var(--danger);
 }
 
 .player-card-header {
@@ -396,13 +407,14 @@ function getVotePercentage(playerNum: number): number {
 
 .player-card-header h4 {
   margin: 0 0 0.35rem 0;
-  color: #1f2937;
+  color: var(--text);
   font-size: 1.15rem;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .player-meta {
   margin: 0;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -411,18 +423,20 @@ function getVotePercentage(playerNum: number): number {
   flex-direction: column;
   align-items: flex-end;
   padding: 0.55rem 0.85rem;
-  background: rgba(245, 166, 35, 0.15);
+  background: rgba(245, 158, 11, 0.15);
   border-radius: 999px;
 }
 
 .player-badge span {
-  color: #b45309;
+  color: var(--warn);
   font-size: 0.8rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .player-badge strong {
-  color: #c2410c;
+  color: var(--warn);
   font-size: 1rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .theme-list {
@@ -434,26 +448,31 @@ function getVotePercentage(playerNum: number): number {
 .theme-pill {
   padding: 0.75rem 0.9rem;
   border-radius: 999px;
-  background: #f59e0b;
-  color: white;
+  background: var(--glow-10);
+  color: var(--glow);
+  border: 1px solid var(--glow-30);
   font-weight: 700;
   text-align: center;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .theme-pill.consumed {
-  background: #cbd5e1;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border-color: transparent;
 }
 
 .theme-pill.temp-locked {
-  background: #fde68a;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warn);
+  border-color: rgba(245, 158, 11, 0.3);
   opacity: 0.75;
 }
 
 .theme-pill.revival-locked {
-  background: #cbd5e1;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border-color: transparent;
 }
 
 .prop-area {
@@ -468,32 +487,30 @@ function getVotePercentage(playerNum: number): number {
 .status-badge {
   display: inline-block;
   padding: 0.4rem 0.8rem;
-  background-color: #ecf0f1;
-  color: #7f8c8d;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--danger);
   border-radius: 4px;
   font-size: 0.9rem;
   font-weight: bold;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .status-badge.active {
-  background-color: #d5f4e6;
-  color: #27ae60;
+  background: var(--glow-10);
+  color: var(--glow);
+  border: 1px solid var(--glow-30);
 }
 
-/* Responsive adjustments for small tablets */
 @media (min-width: 768px) {
   .vote-container {
     gap: 2rem;
   }
-
   .section {
     padding: 2rem;
   }
-
   .result-bar {
     height: 50px;
   }
-
   .player-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
