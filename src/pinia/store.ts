@@ -374,6 +374,14 @@ export const useGameStore = defineStore('game', () => {
     state.value.currentTimerPlayer = challengerName
     state.value.isTimerRunning = true
     state.value.battleWinner = null
+    if (state.value.voteResults) {
+      state.value.voteResults.player1 = challengerName
+      state.value.voteResults.player2 = defenderName
+      state.value.voteResults.votes1 = 0
+      state.value.voteResults.votes2 = 0
+      state.value.voteResults.voters1 = []
+      state.value.voteResults.voters2 = []
+    }
   }
 
   function startTimer(playerName: string) {
@@ -493,6 +501,16 @@ export const useGameStore = defineStore('game', () => {
     state.value.timePropBonus = {}
   }
 
+  function applyVoteState(incoming: {
+    currentBattle: GameState['currentBattle']
+    voteResults: NonNullable<GameState['voteResults']>
+    battleWinner: string | null
+  }) {
+    state.value.currentBattle = incoming.currentBattle
+    state.value.voteResults = incoming.voteResults
+    state.value.battleWinner = incoming.battleWinner
+  }
+
   return {
     state,
     players,
@@ -541,6 +559,7 @@ export const useGameStore = defineStore('game', () => {
     selectableThemeKeys,
     activateRevivalTheme,
     consumeProp,
-    applyTimeProp
+    applyTimeProp,
+    applyVoteState
   }
 })
