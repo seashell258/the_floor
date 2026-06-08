@@ -195,6 +195,22 @@ function endBattle() {
 </script>
 
 <style scoped>
+.section {
+  background: var(--bg-panel);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--glow);
+  box-shadow: 0 0 20px var(--glow-10);
+}
+
+.section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .battle-section {
   min-height: 720px;
   display: flex;
@@ -211,8 +227,8 @@ function endBattle() {
 .no-battle.large {
   width: 100%;
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: var(--bg-panel);
+  border: 1px solid var(--glow-30);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -242,42 +258,40 @@ function endBattle() {
 
 .battle-meta .label {
   display: block;
-  color: #7f8c8d;
+  color: var(--text-muted);
   font-size: 0.85rem;
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.battle-meta strong {
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.theme-meta strong {
+  color: var(--glow);
 }
 
 .timer {
   margin-top: 0.5rem;
   padding: 0.5rem;
-  background: #bdc3c7; /* 黯淡的灰色背景 */
+  background: var(--bg-surface);
   border-radius: 8px;
   font-weight: bold;
-  color: #7f8c8d; /* 較淡的文字顏色 */
+  color: var(--text-muted);
   text-align: center;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1.4rem;
   transition: all 0.3s ease;
 }
 
 .timer.active {
-  background: #f39c12; /* 橙色背景 */
-  color: white;
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-.winner-announcement {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #d4edda;
-  color: #155724;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 1.2rem;
-  font-weight: bold;
+  background: var(--glow-10);
+  color: var(--glow);
+  box-shadow: 0 0 16px var(--glow);
+  animation: glow-pulse 1s ease-in-out infinite;
 }
 
 .battle-image {
@@ -289,18 +303,11 @@ function endBattle() {
   display: block;
 }
 
-.battle-bottom {
-  display: flex;
-  justify-content: flex-end;
-  font-weight: bold;
-  color: #2c3e50;
-}
-
 .answer-panel {
   margin-top: 1.5rem;
   border-radius: 12px;
-  background: #f7fbff;
-  border: 1px solid #d7e7fb;
+  background: var(--bg-surface);
+  border: 1px solid rgba(25, 233, 255, 0.15);
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -325,12 +332,13 @@ function endBattle() {
 
 .answer-player {
   font-weight: bold;
-  color: #2c3e50;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .answer-votes {
   font-size: 0.95rem;
-  color: #34495e;
+  color: var(--text-muted);
 }
 
 .answer-body {
@@ -340,10 +348,11 @@ function endBattle() {
   justify-content: center;
   padding: 0.5rem 1rem;
   min-height: 48px;
-  background: white;
+  background: var(--bg-panel);
   border-radius: 10px;
-  color: #7f8c8d;
+  color: var(--text);
   text-align: center;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .answer-footer {
@@ -355,38 +364,48 @@ function endBattle() {
 
 .skip-btn {
   padding: 0.8rem 1.2rem;
-  background: #e67e22;
-  color: white;
+  background: var(--warn);
+  color: #000;
   border: none;
   border-radius: 10px;
   cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .skip-btn:disabled {
-  background: #94a3b8;
+  background: var(--bg-surface);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
 .skip-btn:hover:not(:disabled) {
-  background: #d35400;
+  opacity: 0.85;
 }
 
 .next-btn {
   padding: 0.8rem 1.2rem;
-  background: #3498db;
-  color: white;
+  background: var(--glow);
+  color: #000d2b;
   border: none;
   border-radius: 10px;
   cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .next-btn:disabled {
-  background: #94a3b8;
+  background: var(--bg-surface);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
 .next-btn:hover:not(:disabled) {
-  background: #2980b9;
+  background: #3df5ff;
 }
 
 .no-battle.large {
@@ -394,53 +413,59 @@ function endBattle() {
   align-items: center;
   justify-content: center;
   text-align: center;
-}
-
-.no-battle.large button {
-  margin-top: 1rem;
+  color: var(--text-muted);
 }
 
 .result-panel {
   margin-top: 1rem;
   padding: 1.2rem;
-  background: #f0fdf4;
-  border: 2px solid #86efac;
+  background: var(--bg-surface);
+  border: 2px solid var(--glow);
   border-radius: 12px;
+  box-shadow: 0 0 24px var(--glow-30);
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   align-items: center;
+  animation: fade-slide-up 0.3s ease-out;
 }
 
 .winner-announcement {
   font-size: 1.4rem;
   font-weight: bold;
-  color: #166534;
+  color: var(--glow);
+  text-shadow: 0 0 16px var(--glow-30);
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
 }
 
 .result-detail {
   font-size: 0.95rem;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .loser-name {
   font-weight: 600;
+  color: var(--text);
 }
 
 .end-battle-btn {
   padding: 0.7rem 1.8rem;
-  background: #64748b;
-  color: white;
-  border: none;
+  background: transparent;
+  color: var(--glow);
+  border: 1px solid var(--glow);
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
+  font-family: 'Chakra Petch', sans-serif;
   font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   transition: background 0.2s;
 }
 
 .end-battle-btn:hover {
-  background: #475569;
+  background: var(--glow-10);
 }
 </style>
