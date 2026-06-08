@@ -45,17 +45,17 @@ function handleLogout() {
 <style scoped>
 .app-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
 }
 
 .navbar {
-  background-color: #2c3e50;
-  color: white;
+  background-color: var(--bg-panel);
+  color: var(--text);
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--glow);
+  box-shadow: 0 1px 16px var(--glow-30);
   gap: 2rem;
 }
 
@@ -63,6 +63,12 @@ function handleLogout() {
   margin: 0;
   font-size: 1.5rem;
   white-space: nowrap;
+  color: var(--glow);
+  text-shadow: 0 0 16px var(--glow-30);
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .nav-user {
@@ -78,22 +84,24 @@ function handleLogout() {
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text);
 }
 
 .logout-btn {
   padding: 0.5rem 1rem;
-  background-color: #e74c3c;
-  color: white;
-  border: none;
+  background-color: transparent;
+  color: var(--glow);
+  border: 1px solid var(--glow);
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.3s;
+  font-family: 'Chakra Petch', sans-serif;
+  transition: background-color 0.2s;
   white-space: nowrap;
 }
 
 .logout-btn:hover {
-  background-color: #c0392b;
+  background-color: var(--glow-10);
 }
 
 main {
@@ -102,28 +110,23 @@ main {
   margin: 0 auto;
 }
 
-/* Mobile optimization */
 @media (max-width: 768px) {
   .navbar {
     padding: 1rem;
     gap: 1rem;
     flex-wrap: wrap;
   }
-
   .navbar h1 {
     font-size: 1.2rem;
     width: 100%;
   }
-
   .nav-user {
     width: 100%;
   }
-
   .logout-btn {
     padding: 0.5rem 0.8rem;
     font-size: 0.9rem;
   }
-
   main {
     padding: 1rem;
   }
