@@ -185,10 +185,19 @@ function handleStartDuel() {
 
 <style scoped>
 .section {
-  background: white;
+  background: var(--bg-panel);
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glow);
+  box-shadow: 0 0 20px var(--glow-10);
+}
+
+.section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .player-list {
@@ -199,21 +208,20 @@ function handleStartDuel() {
 
 .player-card {
   padding: 1rem;
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--glow-30);
   transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .player-card:hover {
   transform: translateY(-2px);
+  border-color: var(--glow);
 }
 
 .player-card.eliminated {
-  opacity: 0.55;
-  filter: grayscale(0.35);
-  border-color: #e74c3c;
+  opacity: 0.5;
+  border-color: var(--danger);
 }
 
 .player-card-header {
@@ -226,13 +234,14 @@ function handleStartDuel() {
 
 .player-card-header h4 {
   margin: 0 0 0.35rem 0;
-  color: #1f2937;
+  color: var(--text);
   font-size: 1.15rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .player-meta {
   margin: 0;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -241,18 +250,20 @@ function handleStartDuel() {
   flex-direction: column;
   align-items: flex-end;
   padding: 0.55rem 0.85rem;
-  background: rgba(245, 166, 35, 0.15);
+  background: rgba(245, 158, 11, 0.15);
   border-radius: 999px;
 }
 
 .player-badge span {
-  color: #b45309;
+  color: var(--warn);
   font-size: 0.8rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .player-badge strong {
-  color: #c2410c;
+  color: var(--warn);
   font-size: 1rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .theme-list {
@@ -264,8 +275,9 @@ function handleStartDuel() {
 .theme-pill {
   padding: 0.75rem 0.9rem;
   border-radius: 999px;
-  background: #f59e0b;
-  color: white;
+  background: var(--glow-10);
+  color: var(--glow);
+  border: 1px solid var(--glow-30);
   font-weight: 700;
   text-align: center;
   cursor: pointer;
@@ -274,16 +286,24 @@ function handleStartDuel() {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .theme-pill:hover {
   transform: translateY(-1px);
-  background: #d97706;
+  background: var(--glow-30);
 }
 
 .theme-pill.consumed {
-  background: #cbd5e1;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border-color: transparent;
+  cursor: default;
+}
+
+.theme-pill.consumed:hover {
+  transform: none;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .theme-name {
@@ -291,47 +311,49 @@ function handleStartDuel() {
   text-align: center;
 }
 
-/* Temporarily locked: not the top theme, or challenger's own themes */
 .theme-pill.temp-locked {
-  background: #fde68a;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warn);
+  border-color: rgba(245, 158, 11, 0.3);
   cursor: not-allowed;
   opacity: 0.75;
 }
 
 .theme-pill.temp-locked:hover {
   transform: none;
-  background: #fde68a;
+  background: rgba(245, 158, 11, 0.12);
 }
 
-/* Revival theme not yet activated */
 .theme-pill.revival-locked {
-  background: #cbd5e1;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border-color: transparent;
   cursor: not-allowed;
 }
 
 .theme-pill.revival-locked:hover {
   transform: none;
-  background: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .revival-btn {
   background: none;
-  border: 1px solid #94a3b8;
+  border: 1px solid var(--glow-30);
   border-radius: 4px;
   font-size: 0.75rem;
   cursor: pointer;
   padding: 0.1rem 0.3rem;
   flex-shrink: 0;
   line-height: 1;
+  color: var(--text-muted);
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .revival-btn:hover {
-  background: #e2e8f0;
+  border-color: var(--glow);
+  color: var(--glow);
 }
 
-/* Prop display area */
 .prop-area {
   margin-bottom: 0.75rem;
   display: flex;
@@ -341,7 +363,7 @@ function handleStartDuel() {
 .prop-btn {
   font-size: 1.5rem;
   background: none;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--glow-30);
   border-radius: 8px;
   padding: 0.25rem 0.6rem;
   cursor: pointer;
@@ -350,15 +372,14 @@ function handleStartDuel() {
 }
 
 .prop-btn:hover {
-  border-color: #f59e0b;
-  background: #fffbeb;
+  border-color: var(--glow);
+  background: var(--glow-10);
 }
 
-/* Confirm modal */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -366,22 +387,24 @@ function handleStartDuel() {
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-panel);
   padding: 1.5rem;
   border-radius: 12px;
+  border: 1px solid var(--glow-30);
   max-width: 360px;
   width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .modal-content h4 {
   margin: 0 0 0.75rem 0;
-  color: #1f2937;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .modal-content p {
   margin: 0 0 1.25rem 0;
-  color: #374151;
+  color: var(--text-muted);
 }
 
 .modal-actions {
@@ -392,78 +415,83 @@ function handleStartDuel() {
 
 .cancel-btn {
   padding: 0.5rem 1rem;
-  background: #e5e7eb;
-  color: #374151;
-  border: none;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid rgba(25, 233, 255, 0.2);
   border-radius: 6px;
   cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  transition: color 0.15s;
 }
 
 .cancel-btn:hover {
-  background: #d1d5db;
+  color: var(--text);
 }
 
 .confirm-btn {
   padding: 0.5rem 1rem;
-  background: #7c3aed;
-  color: white;
+  background: var(--glow);
+  color: #000d2b;
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
 }
 
 .confirm-btn:hover {
-  background: #6d28d9;
+  background: #3df5ff;
 }
 
 .status-indicator {
   display: inline-block;
   padding: 0.35rem 0.7rem;
-  background-color: #ecf0f1;
-  color: #7f8c8d;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--danger);
   border-radius: 5px;
   font-size: 0.85rem;
   font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .status-indicator.active {
-  background-color: #d5f4e6;
-  color: #166534;
+  background: var(--glow-10);
+  color: var(--glow);
+  border: 1px solid var(--glow-30);
 }
 
-/* FAB */
 .host-fab {
   position: fixed;
   bottom: 1.5rem;
   left: 1.5rem;
   z-index: 100;
   padding: 0.6rem 1.1rem;
-  background: #7c3aed;
-  color: white;
+  background: var(--glow);
+  color: #000d2b;
   border-radius: 999px;
   font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif;
   font-size: 0.9rem;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 16px var(--glow-30);
   transition: background 0.2s, transform 0.15s;
   user-select: none;
 }
 
 .host-fab:hover {
-  background: #6d28d9;
+  background: #3df5ff;
   transform: translateY(-2px);
 }
 
-/* Expanded panel */
 .host-panel {
   position: fixed;
   bottom: 1.5rem;
   left: 1.5rem;
   width: min(340px, calc(100% - 2.5rem));
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-panel);
+  border: 1px solid var(--glow-30);
   border-radius: 14px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   z-index: 10;
 }
 
@@ -472,19 +500,20 @@ function handleStartDuel() {
   justify-content: space-between;
   align-items: center;
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(25, 233, 255, 0.1);
 }
 
 .host-panel-title {
   font-weight: 700;
-  color: #7c3aed;
+  color: var(--glow);
   font-size: 0.95rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 1rem;
   padding: 0.2rem 0.4rem;
@@ -493,7 +522,7 @@ function handleStartDuel() {
 }
 
 .close-btn:hover {
-  color: #374151;
+  color: var(--text);
 }
 
 .host-panel-body {
@@ -512,45 +541,50 @@ function handleStartDuel() {
 .panel-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .panel-select {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgba(25, 233, 255, 0.25);
   border-radius: 8px;
   font-size: 0.95rem;
-  color: #1f2937;
-  background: #f9fafb;
+  color: var(--text);
+  background: var(--bg-surface);
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .current-theme-hint {
   font-size: 0.8rem;
-  color: #7c3aed;
+  color: var(--text-muted);
 }
 
 .duel-btn {
   width: 100%;
   padding: 0.75rem;
-  background: #7c3aed;
-  color: white;
+  background: var(--glow);
+  color: #000d2b;
   border: none;
   border-radius: 8px;
   font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif;
   font-size: 0.95rem;
   cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   transition: background 0.2s;
 }
 
 .duel-btn:hover:not(:disabled) {
-  background: #6d28d9;
+  background: #3df5ff;
 }
 
 .duel-btn:disabled {
-  background: #c4b5fd;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
