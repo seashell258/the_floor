@@ -46,10 +46,19 @@ function handleChange(event: Event) {
 
 <style scoped>
 .section {
-  background: white;
+  background: var(--bg-panel);
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glow);
+  box-shadow: 0 0 20px var(--glow-10);
+}
+
+.section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .draw-inner {
@@ -61,47 +70,61 @@ function handleChange(event: Event) {
 
 .label {
   font-weight: bold;
-  color: #34495e;
+  color: var(--text-muted);
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.85rem;
 }
 
 .player-select {
   width: 100%;
   padding: 0.95rem 1rem;
-  border: 1px solid #dce1e7;
+  border: 1px solid rgba(25, 233, 255, 0.25);
   border-radius: 8px;
   font-size: 1rem;
-  color: #2c3e50;
+  color: var(--text);
+  background: var(--bg-surface);
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .draw-btn {
   margin: 1rem 0;
   padding: 0.75rem 1rem;
   width: 100%;
-  background: #3498db;
-  color: white;
+  background: var(--glow);
+  color: #000d2b;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.3s;
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: background 0.2s;
 }
 
 .draw-btn:hover {
-  background-color: #2980b9;
+  background: #3df5ff;
 }
 
 .draw-result {
   padding: 1rem;
-  background: #f8fbff;
+  background: var(--bg-surface);
   border-radius: 8px;
-  border: 1px solid #d7e7fb;
+  border: 1px solid var(--glow-30);
+  color: var(--text);
+}
+
+.draw-result strong {
+  color: var(--glow);
 }
 
 .no-result {
   padding: 1rem;
-  background-color: #ecf0f1;
+  background: var(--bg-surface);
   border-radius: 4px;
   text-align: center;
-  color: #7f8c8d;
+  color: var(--text-muted);
 }
 </style>
