@@ -20,11 +20,13 @@ io.on('connection', (socket) => {
   socket.emit('voteState', voteState)
 
   socket.on('pushVoteState', (state) => {
+    if (!state || typeof state !== 'object') return
     voteState = state
     socket.broadcast.emit('voteState', voteState)
   })
 
   socket.on('recordVote', ({ playerChoice, voterName }) => {
+    if (!voterName) return
     const vr = voteState.voteResults
     if (!vr) return
 
