@@ -113,7 +113,7 @@ h1 {
   width: 100%;
   padding: 1rem;
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -131,7 +131,7 @@ h1 {
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #3df5ff;
+  background: var(--glow-bright);
 }
 
 .login-btn:disabled {

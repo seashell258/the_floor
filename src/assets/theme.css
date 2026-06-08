@@ -7,6 +7,7 @@
   --glow:       #19E9FF;
   --glow-30:    rgba(25, 233, 255, 0.30);
   --glow-10:    rgba(25, 233, 255, 0.10);
+  --glow-bright: #3df5ff;
   --text:       #e2f4f8;
   --text-muted: rgba(226, 244, 248, 0.50);
   --danger:     #ff4655;

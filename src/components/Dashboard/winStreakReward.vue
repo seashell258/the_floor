@@ -93,7 +93,7 @@ function handleChange(event: Event) {
   padding: 0.75rem 1rem;
   width: 100%;
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -105,7 +105,7 @@ function handleChange(event: Event) {
 }
 
 .draw-btn:hover {
-  background: #3df5ff;
+  background: var(--glow-bright);
 }
 
 .draw-result {

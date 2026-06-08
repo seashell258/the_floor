@@ -431,7 +431,7 @@ function handleStartDuel() {
 .confirm-btn {
   padding: 0.5rem 1rem;
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -440,7 +440,7 @@ function handleStartDuel() {
 }
 
 .confirm-btn:hover {
-  background: #3df5ff;
+  background: var(--glow-bright);
 }
 
 .status-indicator {
@@ -467,7 +467,7 @@ function handleStartDuel() {
   z-index: 100;
   padding: 0.6rem 1.1rem;
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border-radius: 999px;
   font-weight: 700;
   font-family: 'Chakra Petch', sans-serif;
@@ -479,7 +479,7 @@ function handleStartDuel() {
 }
 
 .host-fab:hover {
-  background: #3df5ff;
+  background: var(--glow-bright);
   transform: translateY(-2px);
 }
 
@@ -567,7 +567,7 @@ function handleStartDuel() {
   width: 100%;
   padding: 0.75rem;
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border: none;
   border-radius: 8px;
   font-weight: 700;
@@ -580,7 +580,7 @@ function handleStartDuel() {
 }
 
 .duel-btn:hover:not(:disabled) {
-  background: #3df5ff;
+  background: var(--glow-bright);
 }
 
 .duel-btn:disabled {

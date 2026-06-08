@@ -237,6 +237,11 @@ function getVotePercentage(playerNum: number): number {
   padding-bottom: 0.75rem;
 }
 
+.vote-stats {
+  background: var(--bg-surface);
+  border-color: rgba(25, 233, 255, 0.12);
+}
+
 .vote-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -246,7 +251,7 @@ function getVotePercentage(playerNum: number): number {
 .vote-btn {
   padding: 1.2rem 1rem;
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -264,7 +269,7 @@ function getVotePercentage(playerNum: number): number {
 }
 
 .vote-btn:hover:not(:disabled):not(.voted) {
-  background: #3df5ff;
+  background: var(--glow-bright);
 }
 
 .vote-btn.voted {
@@ -338,7 +343,7 @@ function getVotePercentage(playerNum: number): number {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000d2b;
+  color: var(--bg-panel);
   font-weight: bold;
   font-size: 0.9rem;
   min-width: 30px;

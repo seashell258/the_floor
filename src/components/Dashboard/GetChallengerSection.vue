@@ -92,7 +92,7 @@ function handleRemovePlayer(playerName: string) {
 }
 
 .section h3 {
-  margin: 0 0 0 0;
+  margin: 0 0 1rem 0;
   color: var(--text);
   font-family: 'Chakra Petch', sans-serif;
   text-transform: uppercase;
@@ -127,12 +127,12 @@ function handleRemovePlayer(playerName: string) {
 
 .wheel-btn:first-child {
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border: none;
 }
 
 .wheel-btn:first-child:hover:not(:disabled) {
-  background: #3df5ff;
+  background: var(--glow-bright);
 }
 
 .wheel-btn:not(:first-child) {
@@ -251,7 +251,7 @@ function handleRemovePlayer(playerName: string) {
 .remove-btn {
   padding: 0.25rem 0.5rem;
   background: var(--danger);
-  color: white;
+  color: var(--text);
   border: none;
   border-radius: 4px;
   cursor: pointer;

@@ -365,7 +365,7 @@ function endBattle() {
 .skip-btn {
   padding: 0.8rem 1.2rem;
   background: var(--warn);
-  color: #000;
+  color: var(--bg-panel);
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -388,7 +388,7 @@ function endBattle() {
 .next-btn {
   padding: 0.8rem 1.2rem;
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -405,7 +405,7 @@ function endBattle() {
 }
 
 .next-btn:hover:not(:disabled) {
-  background: #3df5ff;
+  background: var(--glow-bright);
 }
 
 .no-battle.large {

@@ -185,7 +185,7 @@ h2 {
 
 .tournament-winner-banner {
   background: var(--glow);
-  color: #000d2b;
+  color: var(--bg-panel);
   text-align: center;
   padding: 1rem;
   font-size: 1.5rem;
