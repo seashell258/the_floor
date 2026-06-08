@@ -27,7 +27,7 @@
         <img :src="currentPhotoSrc" :alt="currentPhoto" class="battle-image" @error="onPhotoError">
         <div v-if="battleWinner" class="result-panel">
           <div class="winner-announcement">
-            🏆 {{ battleWinner }} 勝利！
+             {{ battleWinner }} 勝利！
           </div>
           <div class="result-detail">
             <span class="loser-name">

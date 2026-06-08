@@ -1,0 +1,37 @@
+# docker compose up -d
+
+ #(或用 docker ps 找到真正的名字)
+# docker exec --user seashell -it the_cat_floor bash 
+
+# claude --dangerously-skip-permissions 
+
+# ls -la ~/.claude
+
+services:
+
+
+  ai-dev:
+    build: .
+    image: ai-dev:latest
+    container_name: the_cat_floor
+    tty: true            # 重要：分配虛擬終端機，防止閃退
+    stdin_open: true     # 重要：保持標準輸入開啟
+    command: tail -f /dev/null
+    volumes:
+      # 1. 你的程式碼專案
+      - .:/app
+      
+      
+      # 3. 【掛載我持久累積的偏好 hook skill，放進Linux 內部的獨立空間
+      - claude_config:/home/seashell/.claude
+      
+    working_dir: /app
+    
+    environment:
+      - TZ=Asia/Taipei
+      - HOME=/home/seashell
+    
+
+volumes:
+  claude_config: ## 這裡把資料存在 docker desktop 的 linux 環境中。 跟容器互動比較順暢 (高 io 時) 但這樣要同步 .claude 裡面的內容似乎比較不方便，
+  # 也許未來可以改成掛載 win路徑下的資料夾就好。 
