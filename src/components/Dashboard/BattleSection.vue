@@ -2,64 +2,69 @@
   <section class="section battle-section">
     <h3>開始battle</h3>
 
-    <div class="battle-stage">
-      <div v-if="battleInfo" class="battle-card">
-        <div class="battle-meta">
-          <div>
-            <span class="label">對戰者</span>
-            <strong>{{ battleInfo.player1Name }}</strong>
-            <div :class="['timer', { active: currentTimerPlayer === battleInfo.player1Name && isTimerRunning }]">
-              {{ challengerTimer }}s
+    <div class="battle-row">
+      <div class="battle-main">
+        <div class="battle-stage">
+          <div v-if="battleInfo" class="battle-card">
+            <div class="battle-meta">
+              <div>
+                <span class="label">對戰者</span>
+                <strong>{{ battleInfo.player1Name }}</strong>
+                <div :class="['timer', { active: currentTimerPlayer === battleInfo.player1Name && isTimerRunning }]">
+                  {{ challengerTimer }}s
+                </div>
+              </div>
+              <div v-if="selectedThemeName" class="theme-meta">
+                <span class="label">主題</span>
+                <strong>{{ selectedThemeName }}</strong>
+              </div>
+              <div>
+                <span class="label">VS</span>
+                <strong>{{ battleInfo.player2Name }}</strong>
+                <div :class="['timer', { active: currentTimerPlayer === battleInfo.player2Name && isTimerRunning }]">
+                  {{ defenderTimer }}s
+                </div>
+              </div>
+            </div>
+            <img :src="currentPhotoSrc" :alt="currentPhoto" class="battle-image" @error="onPhotoError">
+            <div v-if="battleWinner" class="result-panel">
+              <div class="winner-announcement">
+                 {{ battleWinner }} 勝利！
+              </div>
+              <div class="result-detail">
+                <span class="loser-name">
+                  {{ battleWinner === battleInfo.player1Name ? battleInfo.player2Name : battleInfo.player1Name }}
+                  的第一順位主題已消耗
+                </span>
+              </div>
+              <button class="end-battle-btn" @click="endBattle">結束對戰</button>
             </div>
           </div>
-          <div v-if="selectedThemeName" class="theme-meta">
-            <span class="label">主題</span>
-            <strong>{{ selectedThemeName }}</strong>
-          </div>
-          <div>
-            <span class="label">VS</span>
-            <strong>{{ battleInfo.player2Name }}</strong>
-            <div :class="['timer', { active: currentTimerPlayer === battleInfo.player2Name && isTimerRunning }]">
-              {{ defenderTimer }}s
-            </div>
+
+          <div v-else class="no-battle large">
+            尚無對戰
           </div>
         </div>
-        <img :src="currentPhotoSrc" :alt="currentPhoto" class="battle-image" @error="onPhotoError">
-        <div v-if="battleWinner" class="result-panel">
-          <div class="winner-announcement">
-             {{ battleWinner }} 勝利！
+
+        <div class="answer-panel">
+          <div class="answer-header">
+            <div class="answer-side">
+              <span class="answer-player">{{ voteResults?.player1 || 'Player 1' }}</span>
+              <span class="answer-votes">{{ voteResults?.votes1 ?? 0 }} 票</span>
+            </div>
+            <div class="answer-side">
+              <span class="answer-player">{{ voteResults?.player2 || 'Player 2' }}</span>
+              <span class="answer-votes">{{ voteResults?.votes2 ?? 0 }} 票</span>
+            </div>
           </div>
-          <div class="result-detail">
-            <span class="loser-name">
-              {{ battleWinner === battleInfo.player1Name ? battleInfo.player2Name : battleInfo.player1Name }}
-              的第一順位主題已消耗
-            </span>
+          <div class="answer-body">
+            <p v-if="showAnswer">{{ currentAnswer || selectedThemeAnswers[currentPhotoIndex] || '暫無答案' }}</p>
+            <p v-else></p>
           </div>
-          <button class="end-battle-btn" @click="endBattle">結束對戰</button>
         </div>
       </div>
 
-      <div v-else class="no-battle large">
-        尚無對戰
-      </div>
-    </div>
-
-    <div class="answer-panel">
-      <div class="answer-header">
-        <div class="answer-side">
-          <span class="answer-player">{{ voteResults?.player1 || 'Player 1' }}</span>
-          <span class="answer-votes">{{ voteResults?.votes1 ?? 0 }} 票</span>
-        </div>
-        <div class="answer-side right">
-          <span class="answer-player">{{ voteResults?.player2 || 'Player 2' }}</span>
-          <span class="answer-votes">{{ voteResults?.votes2 ?? 0 }} 票</span>
-        </div>
-      </div>
-      <div class="answer-body">
-        <p v-if="showAnswer">{{ currentAnswer || selectedThemeAnswers[currentPhotoIndex] || '暫無答案' }}</p>
-        <p v-else></p>
-      </div>
-      <div class="answer-footer">
+      <div class="battle-controls">
         <button class="skip-btn" @click="skipQuestion" :disabled="isNextDisabled">跳過</button>
         <button class="next-btn" @click="nextQuestion" :disabled="isNextDisabled">下一題</button>
       </div>
@@ -217,10 +222,26 @@ function endBattle() {
   flex-direction: column;
 }
 
+.battle-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  flex: 1;
+  align-items: stretch;
+}
+
+.battle-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .battle-stage {
   flex: 1;
   display: flex;
   align-items: stretch;
+  margin-bottom: 1rem;
 }
 
 .battle-card,
@@ -304,19 +325,18 @@ function endBattle() {
 }
 
 .answer-panel {
-  margin-top: 1.5rem;
   border-radius: 12px;
   background: var(--bg-surface);
   border: 1px solid rgba(25, 233, 255, 0.15);
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  min-height: 220px;
 }
 
 .answer-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 2rem;
   margin-bottom: 1rem;
 }
 
@@ -324,10 +344,6 @@ function endBattle() {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.answer-side.right {
-  align-items: flex-end;
 }
 
 .answer-player {
@@ -355,15 +371,18 @@ function endBattle() {
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
-.answer-footer {
+.battle-controls {
+  width: 88px;
+  flex-shrink: 0;
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .skip-btn {
-  padding: 0.8rem 1.2rem;
+  width: 100%;
+  padding: 1rem 0.5rem;
   background: var(--warn);
   color: var(--bg-panel);
   border: none;
@@ -371,8 +390,10 @@ function endBattle() {
   cursor: pointer;
   font-family: 'Chakra Petch', sans-serif;
   font-weight: 600;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .skip-btn:disabled {
@@ -386,7 +407,8 @@ function endBattle() {
 }
 
 .next-btn {
-  padding: 0.8rem 1.2rem;
+  width: 100%;
+  padding: 1rem 0.5rem;
   background: var(--glow);
   color: var(--bg-panel);
   border: none;
@@ -394,8 +416,10 @@ function endBattle() {
   cursor: pointer;
   font-family: 'Chakra Petch', sans-serif;
   font-weight: 700;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .next-btn:disabled {
