@@ -22,12 +22,18 @@
     <div class="vote-container">
       <section v-if="activeTab === 'vote'" class="section">
         <h3>投票</h3>
+
+        <div v-if="gameStore.currentBattle" class="vote-deadline-badge" :class="{ closed: !voteOpen }">
+          <span v-if="voteOpen">投票截止倒數：{{ voteSecondsLeft }}s</span>
+          <span v-else>投票已截止</span>
+        </div>
+
         <div v-if="gameStore.currentBattle" class="vote-buttons">
           <button
             @click="vote(1)"
             class="vote-btn"
             :class="{ 'voted': hasVotedFor(1) }"
-            :disabled="hasVoted"
+            :disabled="hasVoted || !voteOpen"
           >
             <Check v-if="hasVotedFor(1)" :size="16" style="margin-right:0.3rem;vertical-align:middle" />Vote for {{ gameStore.currentBattle?.player1Name }}
           </button>
@@ -35,7 +41,7 @@
             @click="vote(2)"
             class="vote-btn"
             :class="{ 'voted': hasVotedFor(2) }"
-            :disabled="hasVoted"
+            :disabled="hasVoted || !voteOpen"
           >
             <Check v-if="hasVotedFor(2)" :size="16" style="margin-right:0.3rem;vertical-align:middle" />Vote for {{ gameStore.currentBattle?.player2Name }}
           </button>
@@ -121,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useGameStore } from '../pinia/store'
 import { getThemeClass } from '../utils/themeUtils'
 import { socket } from '../socket'
@@ -130,6 +136,33 @@ import { Check, Clock, Shield } from 'lucide-vue-next'
 const gameStore = useGameStore()
 const activeTab = ref<'vote' | 'status'>('vote')
 
+const VOTE_WINDOW_MS = 7000
+const now = ref(Date.now())
+let countdownInterval: number | null = null
+
+watch(() => gameStore.currentBattle, (battle) => {
+  if (battle) {
+    countdownInterval = window.setInterval(() => { now.value = Date.now() }, 200)
+  } else {
+    if (countdownInterval !== null) {
+      clearInterval(countdownInterval)
+      countdownInterval = null
+    }
+  }
+}, { immediate: true })
+
+onUnmounted(() => {
+  if (countdownInterval !== null) clearInterval(countdownInterval)
+})
+
+const voteSecondsLeft = computed(() => {
+  const startedAt = gameStore.battleStartedAt
+  if (!startedAt) return 0
+  return Math.max(0, Math.ceil((startedAt + VOTE_WINDOW_MS - now.value) / 1000))
+})
+
+const voteOpen = computed(() => voteSecondsLeft.value > 0)
+
 const selectableKeys = computed(() =>
   gameStore.currentChallenger ? gameStore.selectableThemeKeys : null
 )
@@ -137,8 +170,8 @@ const selectableKeys = computed(() =>
 function vote(playerChoice: number) {
   const voterName = gameStore.currentVoter?.name
   if (!voterName || !gameStore.voteResults) return
-
   if (hasVoted.value) return
+  if (!voteOpen.value) return
 
   gameStore.recordVote(playerChoice, voterName)
   socket.emit('recordVote', { playerChoice, voterName })
@@ -508,6 +541,26 @@ function getVotePercentage(playerNum: number): number {
   background: var(--glow-10);
   color: var(--glow);
   border: 1px solid var(--glow-30);
+}
+
+.vote-deadline-badge {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.95rem;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warn);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  letter-spacing: 0.04em;
+}
+
+.vote-deadline-badge.closed {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border-color: transparent;
 }
 
 @media (min-width: 768px) {
