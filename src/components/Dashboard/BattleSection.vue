@@ -1,5 +1,9 @@
 <template>
-  <section class="section battle-section">
+  <section class="section battle-section" :class="borderFlashClass">
+    <button class="mute-btn" @click="toggleMute" :title="isMuted ? '取消靜音' : '靜音'">
+      <VolumeX v-if="isMuted" :size="16" />
+      <Volume2 v-else :size="16" />
+    </button>
     <div class="battle-row">
       <div class="vote-bar">
         <div class="vote-col">
@@ -41,18 +45,6 @@
               </div>
             </div>
             <img :src="currentPhotoSrc" :alt="currentPhoto" class="battle-image" @error="onPhotoError">
-            <div v-if="battleWinner" class="result-panel">
-              <div class="winner-announcement">
-                 {{ battleWinner }} 勝利！
-              </div>
-              <div class="result-detail">
-                <span class="loser-name">
-                  {{ battleWinner === battleInfo.player1Name ? battleInfo.player2Name : battleInfo.player1Name }}
-                  的第一順位主題已消耗
-                </span>
-              </div>
-              <button class="end-battle-btn" @click="endBattle">結束對戰</button>
-            </div>
           </div>
 
           <div v-else class="no-battle large">
@@ -60,7 +52,19 @@
           </div>
         </div>
 
-        <div class="answer-panel">
+        <div v-if="battleWinner && battleInfo" class="result-panel">
+          <div class="winner-announcement">
+            {{ battleWinner }} 勝利！
+          </div>
+          <div class="result-detail">
+            <span class="loser-name">
+              {{ battleWinner === battleInfo.player1Name ? battleInfo.player2Name : battleInfo.player1Name }}
+              的第一順位主題已消耗
+            </span>
+          </div>
+          <button class="end-battle-btn" @click="endBattle">結束對戰</button>
+        </div>
+        <div v-else class="answer-panel">
           <div class="answer-body">
             <p v-if="showAnswer">{{ currentAnswer || selectedThemeAnswers[currentPhotoIndex] || '暫無答案' }}</p>
             <p v-else></p>
@@ -80,6 +84,12 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useGameStore } from '../../pinia/store'
 import { socket } from '../../socket'
+import { Volume2, VolumeX } from 'lucide-vue-next'
+import {
+  isMuted, toggleMute,
+  startBattleMusic, stopBattleMusic,
+  playNextSFX, playSkipSFX, playWinnerSFX
+} from '../../composables/useAudio'
 
 const emit = defineEmits<{ (e: 'battle-ended'): void }>()
 
@@ -110,6 +120,12 @@ function getVotePercent(playerNum: 1 | 2): number {
   if (total === 0) return 0
   return playerNum === 1 ? (v1 / total) * 100 : (v2 / total) * 100
 }
+
+const borderFlash = ref<'idle' | 'next' | 'skip'>('idle')
+const borderFlashClass = computed(() => ({
+  'flash-next': borderFlash.value === 'next',
+  'flash-skip': borderFlash.value === 'skip',
+}))
 
 const currentPhotoIndex = ref(0)
 const showAnswer = ref(false)
@@ -147,17 +163,19 @@ const skipQuestion = () => {
 
   if (gameStore.battleWinner) return
 
+  playSkipSFX()
+  borderFlash.value = 'skip'
   currentAnswer.value = selectedThemeAnswers.value[currentPhotoIndex.value] ?? '暫無答案'
   showAnswer.value = true
   gameStore.pauseTimer()
 
-  if (currentPhotoIndex.value < selectedThemePhotos.value.length - 1) {
-    currentPhotoIndex.value += 1
-  }
-
   setTimeout(() => {
+    if (currentPhotoIndex.value < selectedThemePhotos.value.length - 1) {
+      currentPhotoIndex.value += 1
+    }
     showAnswer.value = false
     currentAnswer.value = ''
+    borderFlash.value = 'idle'
     gameStore.startTimer(gameStore.currentTimerPlayer || '')
   }, 800)
 }
@@ -165,20 +183,19 @@ const skipQuestion = () => {
 const nextQuestion = () => {
   if (selectedThemePhotos.value.length === 0 || showAnswer.value) return
 
-  // 記錄當前題目的答案並顯示
+  playNextSFX()
+  borderFlash.value = 'next'
   currentAnswer.value = selectedThemeAnswers.value[currentPhotoIndex.value] ?? '暫無答案'
   showAnswer.value = true
   gameStore.pauseTimer()
 
-  // 立刻切換到下一張照片
-  if (currentPhotoIndex.value < selectedThemePhotos.value.length - 1) {
-    currentPhotoIndex.value += 1
-  }
-
-  // 0.8秒後隱藏答案，換 timer 給另一位玩家
   setTimeout(() => {
+    if (currentPhotoIndex.value < selectedThemePhotos.value.length - 1) {
+      currentPhotoIndex.value += 1
+    }
     showAnswer.value = false
     currentAnswer.value = ''
+    borderFlash.value = 'idle'
     gameStore.switchTimer()
     gameStore.startTimer(gameStore.currentTimerPlayer || '')
   }, 800)
@@ -188,38 +205,34 @@ const isNextDisabled = computed(
   () => selectedThemePhotos.value.length === 0 || showAnswer.value
 )
 
-let autoEndTimeout: ReturnType<typeof setTimeout> | null = null
+watch(battleInfo, (info) => {
+  if (info) startBattleMusic()
+}, { immediate: true })
 
 watch(battleWinner, (winner) => {
   if (!winner) return
+  stopBattleMusic()
+  playWinnerSFX()
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
     battleWinner: winner
   })
-  autoEndTimeout = setTimeout(() => {
-    endBattle()
-  }, 4000)
-})
-
-onUnmounted(() => {
-  if (autoEndTimeout) clearTimeout(autoEndTimeout)
 })
 
 function endBattle() {
-  if (autoEndTimeout) {
-    clearTimeout(autoEndTimeout)
-    autoEndTimeout = null
-  }
+  stopBattleMusic()
+  gameStore.resetBattle()
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
     battleWinner: gameStore.battleWinner
   })
-  gameStore.resetBattle()
   gameStore.clearChallenger()
   emit('battle-ended')
 }
+
+onUnmounted(() => stopBattleMusic())
 </script>
 
 <style scoped>
@@ -229,12 +242,57 @@ function endBattle() {
   border-radius: 8px;
   border: 1px solid var(--glow);
   box-shadow: 0 0 20px var(--glow-10);
+  transition: box-shadow 0.55s ease, border-color 0.55s ease;
+}
+
+.section.flash-next {
+  transition: box-shadow 0.07s ease, border-color 0.07s ease;
+  border-color: var(--glow-bright);
+  box-shadow:
+    0 0 10px var(--glow),
+    0 0 32px var(--glow),
+    0 0 72px var(--glow-30),
+    inset 0 0 24px rgba(25, 233, 255, 0.06);
+}
+
+.section.flash-skip {
+  transition: box-shadow 0.07s ease, border-color 0.07s ease;
+  border-color: var(--danger);
+  box-shadow:
+    0 0 10px var(--danger),
+    0 0 32px var(--danger),
+    0 0 72px rgba(255, 70, 85, 0.35),
+    inset 0 0 24px rgba(255, 70, 85, 0.06);
 }
 
 .battle-section {
   min-height: 720px;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.mute-btn {
+  position: fixed;
+  top: 0.7rem;
+  right: 1rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  opacity: 0.35;
+  padding: 0.25rem 0.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, border-color 0.15s, opacity 0.15s;
+  z-index: 500;
+}
+
+.mute-btn:hover {
+  color: var(--glow);
+  border-color: var(--glow-30);
+  opacity: 1;
 }
 
 .battle-row {
@@ -286,6 +344,7 @@ function endBattle() {
 .battle-meta > div {
   flex: 1 1 0;
   min-width: 0;
+  text-align: center;
 }
 
 .theme-meta {
@@ -332,7 +391,7 @@ function endBattle() {
 
 .battle-image {
   width: 90%;
-  max-height: 600px;
+  height: 600px;
   object-fit: cover;
   border-radius: 12px;
   margin: 0 auto 1rem;
@@ -354,7 +413,7 @@ function endBattle() {
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1rem;
-  min-height: 65px;
+  min-height: 90px;
   background: var(--bg-panel);
   border-radius: 10px;
   color: var(--text);
@@ -432,17 +491,17 @@ function endBattle() {
 }
 
 .result-panel {
-  margin-top: 1rem;
-  padding: 1.2rem;
+  border-radius: 12px;
   background: var(--bg-surface);
   border: 2px solid var(--glow);
-  border-radius: 12px;
   box-shadow: 0 0 24px var(--glow-30);
+  padding: 1rem;
   text-align: center;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
   animation: fade-slide-up 0.3s ease-out;
 }
 
@@ -491,6 +550,7 @@ function endBattle() {
   flex-direction: row;
   gap: 8px;
   align-items: stretch;
+  margin-left: -0.35rem;
 }
 
 .vote-col {
@@ -541,11 +601,14 @@ function endBattle() {
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
   font-size: 1.4rem;
   color: var(--text-muted);
-  writing-mode: vertical-rl;
+  writing-mode: vertical-lr;
   text-orientation: mixed;
+  text-align: center;
   line-height: 1;
   height: 120px;
+  width: 1.4rem;
   overflow: hidden;
   text-overflow: ellipsis;
+  align-self: center;
 }
 </style>

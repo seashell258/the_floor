@@ -9,6 +9,7 @@
     "server": "node server.js"
   },
   "dependencies": {
+    "lucide-vue-next": "^1.0.0",
     "pinia": "^2.1.0",
     "socket.io-client": "^4.8.3",
     "vue": "^3.3.0",

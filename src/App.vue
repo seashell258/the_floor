@@ -1,9 +1,9 @@
 <template>
   <div id="app" class="app-container">
     <Toaster position="top-center" theme="dark" />
-    <nav v-if="gameStore.currentVoter" class="navbar">
+    <nav class="navbar">
       <h1>The Cat Floor</h1>
-      <div class="nav-user">
+      <div v-if="gameStore.currentVoter" class="nav-user">
         <span class="user-name">{{ gameStore.currentVoter?.name }}</span>
         <button @click="handleLogout" class="logout-btn">換個名字</button>
       </div>

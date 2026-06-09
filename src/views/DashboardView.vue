@@ -1,16 +1,12 @@
 <template>
   <div class="dashboard">
-    <div class="dashboard-top">
-      <h2>秦翼 the floor 知識王大賽!</h2>
-      <div class="dashboard-header">
-        <button :class="{ active: activeTab === 'getchallenger' }" @click="activeTab = 'getchallenger'">抽挑戰者</button>
-        <button :class="{ active: activeTab === 'playersList' }" @click="activeTab = 'playersList'">選擇挑戰對象</button>
-        <button :class="{ active: activeTab === 'winStreak' }" @click="activeTab = 'winStreak'">抽連勝獎勵</button>
-      </div>
+    <div v-if="gameStore.tournamentWinner" class="tournament-winner-banner">
+      <Trophy :size="22" style="vertical-align: middle; margin-right: 0.4rem;" />{{ gameStore.tournamentWinner }} 是最後存活者！
     </div>
 
-    <div v-if="gameStore.tournamentWinner" class="tournament-winner-banner">
-      🏆 {{ gameStore.tournamentWinner }} 是最後存活者！
+    <div v-show="activeTab !== 'battle'" class="dashboard-header">
+      <button :class="{ active: activeTab === 'getchallenger' }" @click="activeTab = 'getchallenger'">抽挑戰者</button>
+      <button :class="{ active: activeTab === 'playersList' }" @click="activeTab = 'playersList'">選擇挑戰對象</button>
     </div>
 
     <div class="dashboard-content">
@@ -29,16 +25,7 @@
         :onStartHostBattle="handleStartHostBattle"
       />
 
-      <DrawSection
-        v-if="activeTab === 'winStreak'"
-        :players="gameStore.players"
-        :selectedPlayerName="drawSelectedPlayerName"
-        :onSelectedPlayerChange="updateDrawSelectedPlayerName"
-        :onDrawReward="drawReward"
-        :drawResults="gameStore.drawResults"
-      />
-
-      <GetChallengerSection
+<GetChallengerSection
         v-if="activeTab === 'getchallenger'"
         :onRemovePlayer="permanentlyRemovePlayer"
       />
@@ -48,18 +35,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { Trophy } from 'lucide-vue-next'
 import { useGameStore } from '../pinia/store'
 import BattleSection from '../components/Dashboard/BattleSection.vue'
 import PlayersSection from '../components/Dashboard/PlayersSection.vue'
-import DrawSection from '../components/Dashboard/winStreakReward.vue'
 import GetChallengerSection from '../components/Dashboard/GetChallengerSection.vue'
 import { toast } from 'vue-sonner'
 import { socket } from '../socket'
 
 const gameStore = useGameStore()
-const activeTab = ref<'battle' | 'playersList' | 'winStreak' | 'getchallenger'>('getchallenger')
-const drawSelectedPlayerName = ref(gameStore.players[0]?.name || '')
-const rewardOptions: Array<'time' | 'shield'> = ['time', 'shield']
+const activeTab = ref<'battle' | 'playersList' | 'getchallenger'>('getchallenger')
 
 const selectedThemePhotos = ref<string[]>([])
 const selectedThemeName = ref('')
@@ -111,21 +96,6 @@ function handleThemeClick(player: any, theme: any) {
   activeTab.value = 'battle'
 }
 
-function drawReward() {
-  if (!confirm('是否要開始抽獎？')) return
-
-  const prop = rewardOptions[Math.floor(Math.random() * rewardOptions.length)]
-  const player = gameStore.players.find(p => p.name === drawSelectedPlayerName.value)
-  if (!player) return
-
-  gameStore.applyProp(player.name, prop)
-  gameStore.recordDrawResult(player.name, prop === 'time' ? '⏱ 時間+3秒' : '🛡 盾牌')
-}
-
-function updateDrawSelectedPlayerName(name: string) {
-  drawSelectedPlayerName.value = name
-}
-
 function permanentlyRemovePlayer(playerName: string) {
   gameStore.permanentlyRemovePlayer(playerName)
 }
@@ -149,30 +119,13 @@ function handleStartHostBattle(challengerName: string) {
   width: 100%;
 }
 
-.dashboard-top {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(25, 233, 255, 0.15);
-  padding-bottom: 0.5rem;
-}
-
-h2 {
-  margin: 0;
-  color: var(--text-muted);
-  font-family: 'Chakra Petch', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 .dashboard-header {
   display: flex;
   gap: 0.75rem;
+  margin-bottom: 0.75rem;
   flex-wrap: wrap;
+  border-bottom: 1px solid rgba(25, 233, 255, 0.15);
+  padding-bottom: 0.5rem;
 }
 
 .dashboard-header button {

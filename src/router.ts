@@ -24,7 +24,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/vote',
     name: 'Vote',
     component: VoteView,
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
   }
 ]
 

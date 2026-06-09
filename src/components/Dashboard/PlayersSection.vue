@@ -27,7 +27,7 @@
               class="revival-btn"
               @click.stop="openRevivalConfirm(player.name)"
               title="啟用復活題"
-            >🔓</button>
+            ><Unlock :size="12" /></button>
           </div>
         </div>
 
@@ -36,7 +36,7 @@
             class="prop-btn"
             @click="handlePropClick(player)"
             :title="player.prop === 'time' ? '使用：時間+3秒' : '使用：盾牌'"
-          >{{ propLabel(player.prop) }}</button>
+          ><Clock v-if="player.prop === 'time'" :size="20" /><Shield v-else :size="20" /></button>
         </div>
         <div class="status-indicator" :class="{ active: !player.eliminated }">
           {{ player.eliminated ? '已淘汰' : '存活' }}
@@ -44,16 +44,46 @@
       </div>
     </div>
 
+    <!-- 抽連勝獎勵 FAB -->
+    <div v-if="!isDrawPanelOpen" class="draw-fab" @click="openDrawPanel">
+      <Gift :size="15" /><span>抽連勝獎勵</span>
+    </div>
+
+    <!-- 抽連勝獎勵面板 -->
+    <div v-else class="draw-panel">
+      <div class="host-panel-header">
+        <span class="host-panel-title">抽連勝獎勵</span>
+        <button class="close-btn" @click="isDrawPanelOpen = false"><X :size="15" /></button>
+      </div>
+      <div class="host-panel-body">
+        <div class="panel-row">
+          <label class="panel-label">選擇玩家</label>
+          <select v-model="drawSelectedPlayerName" class="panel-select">
+            <option v-for="p in gameStore.players" :key="p.name" :value="p.name">
+              {{ p.name }}
+            </option>
+          </select>
+        </div>
+        <button class="duel-btn" :disabled="!drawSelectedPlayerName" @click="handleDrawReward">
+          開始抽獎
+        </button>
+        <div v-if="gameStore.drawResults" class="draw-result">
+          <span class="draw-result-name">{{ gameStore.drawResults.winner }}</span>
+          <span class="draw-result-reward">{{ gameStore.drawResults.reward }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 挑戰主持人 FAB -->
     <div v-if="!isPanelOpen" class="host-fab" @click="openPanel">
-      ⚔️ 挑戰主持人
+      <Swords :size="15" /><span>挑戰主持人</span>
     </div>
 
     <!-- 展開面板 -->
     <div v-else class="host-panel">
       <div class="host-panel-header">
         <span class="host-panel-title">挑戰主持人</span>
-        <button class="close-btn" @click="isPanelOpen = false">✕</button>
+        <button class="close-btn" @click="isPanelOpen = false"><X :size="15" /></button>
       </div>
 
       <div class="host-panel-body">
@@ -110,6 +140,7 @@
 import { ref, computed } from 'vue'
 import { useGameStore } from '../../pinia/store'
 import { getThemeClass } from '../../utils/themeUtils'
+import { Swords, Gift, Unlock, Clock, Shield, X } from 'lucide-vue-next'
 
 const props = defineProps<{
   players: Array<any>
@@ -119,9 +150,12 @@ const props = defineProps<{
 
 const gameStore = useGameStore()
 const isPanelOpen = ref(false)
+const isDrawPanelOpen = ref(false)
 const selectedChallengerName = ref('')
 const selectedHostThemeKey = ref('')
 const revivalConfirmPlayer = ref<string | null>(null)
+const drawSelectedPlayerName = ref('')
+const rewardOptions: Array<'time' | 'shield'> = ['time', 'shield']
 
 const selectableKeys = computed(() =>
   gameStore.currentChallenger ? gameStore.selectableThemeKeys : null
@@ -137,9 +171,6 @@ function handleThemeClick(player: any, theme: any): void {
   props.onThemeClick(player, theme)
 }
 
-function propLabel(prop: 'time' | 'shield'): string {
-  return prop === 'time' ? '⏱' : '🛡'
-}
 
 function handlePropClick(player: any): void {
   if (!player.prop) return
@@ -168,7 +199,23 @@ function openPanel() {
   if (!selectedHostThemeKey.value && gameStore.state.hostCurrentTheme) {
     selectedHostThemeKey.value = gameStore.state.hostCurrentTheme.name
   }
+  isDrawPanelOpen.value = false
   isPanelOpen.value = true
+}
+
+function openDrawPanel() {
+  if (!drawSelectedPlayerName.value && gameStore.players.length > 0) {
+    drawSelectedPlayerName.value = gameStore.players[0].name
+  }
+  isPanelOpen.value = false
+  isDrawPanelOpen.value = true
+}
+
+function handleDrawReward() {
+  if (!drawSelectedPlayerName.value) return
+  const prop = rewardOptions[Math.floor(Math.random() * rewardOptions.length)]
+  gameStore.applyProp(drawSelectedPlayerName.value, prop)
+  gameStore.recordDrawResult(drawSelectedPlayerName.value, prop === 'time' ? '時間+3秒' : '盾牌')
 }
 
 function onHostThemeChange() {
@@ -460,6 +507,66 @@ function handleStartDuel() {
   border: 1px solid var(--glow-30);
 }
 
+.draw-fab {
+  position: fixed;
+  bottom: 4.5rem;
+  left: 1.5rem;
+  z-index: 100;
+  padding: 0.6rem 1.1rem;
+  background: var(--warn);
+  color: var(--bg-panel);
+  border-radius: 999px;
+  font-weight: 700;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+  transition: background 0.2s, transform 0.15s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.draw-fab:hover {
+  background: #f59e0b;
+  transform: translateY(-2px);
+}
+
+.draw-panel {
+  position: fixed;
+  bottom: 4.5rem;
+  left: 1.5rem;
+  width: min(340px, calc(100% - 2.5rem));
+  background: var(--bg-panel);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.draw-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.draw-result-name {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.draw-result-reward {
+  font-weight: 700;
+  color: var(--warn);
+  font-family: 'Chakra Petch', sans-serif;
+}
+
 .host-fab {
   position: fixed;
   bottom: 1.5rem;
@@ -476,6 +583,9 @@ function handleStartDuel() {
   box-shadow: 0 4px 16px var(--glow-30);
   transition: background 0.2s, transform 0.15s;
   user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .host-fab:hover {

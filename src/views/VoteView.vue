@@ -29,7 +29,7 @@
             :class="{ 'voted': hasVotedFor(1) }"
             :disabled="hasVoted"
           >
-            {{ hasVotedFor(1) ? '✓ ' : '' }}Vote for {{ gameStore.currentBattle?.player1Name }}
+            <Check v-if="hasVotedFor(1)" :size="16" style="margin-right:0.3rem;vertical-align:middle" />Vote for {{ gameStore.currentBattle?.player1Name }}
           </button>
           <button
             @click="vote(2)"
@@ -37,18 +37,18 @@
             :class="{ 'voted': hasVotedFor(2) }"
             :disabled="hasVoted"
           >
-            {{ hasVotedFor(2) ? '✓ ' : '' }}Vote for {{ gameStore.currentBattle?.player2Name }}
+            <Check v-if="hasVotedFor(2)" :size="16" style="margin-right:0.3rem;vertical-align:middle" />Vote for {{ gameStore.currentBattle?.player2Name }}
           </button>
         </div>
 
         <div v-if="!gameStore.currentBattle" class="voting-disabled">
           暫無對決
         </div>
-        <div v-if="hasVoted" class="voted-message">
-          ✓ 投票成功
+        <div v-if="hasVoted && gameStore.currentBattle" class="voted-message">
+          <Check :size="16" style="vertical-align:middle;margin-right:0.35rem" />投票成功
         </div>
 
-        <div class="section vote-stats">
+        <div v-if="gameStore.currentBattle" class="section vote-stats">
           <h3>即時票數統計</h3>
           <div v-if="gameStore.voteResults" class="vote-results">
             <div class="result-item">
@@ -105,7 +105,8 @@
 
             <div v-if="player.prop" class="prop-area">
               <span class="prop-icon" :title="player.prop === 'time' ? '時間+3秒' : '盾牌'">
-                {{ player.prop === 'time' ? '⏱' : '🛡' }}
+                <Clock v-if="player.prop === 'time'" :size="20" />
+                <Shield v-else :size="20" />
               </span>
             </div>
 
@@ -124,6 +125,7 @@ import { computed, ref } from 'vue'
 import { useGameStore } from '../pinia/store'
 import { getThemeClass } from '../utils/themeUtils'
 import { socket } from '../socket'
+import { Check, Clock, Shield } from 'lucide-vue-next'
 
 const gameStore = useGameStore()
 const activeTab = ref<'vote' | 'status'>('vote')
@@ -138,6 +140,7 @@ function vote(playerChoice: number) {
 
   if (hasVoted.value) return
 
+  gameStore.recordVote(playerChoice, voterName)
   socket.emit('recordVote', { playerChoice, voterName })
 }
 
