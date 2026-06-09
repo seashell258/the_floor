@@ -23,9 +23,17 @@
       <section v-if="activeTab === 'vote'" class="section">
         <h3>投票</h3>
 
-        <div v-if="gameStore.currentBattle" class="vote-deadline-badge" :class="{ closed: !voteOpen }">
-          <span v-if="voteOpen">投票截止倒數：{{ voteSecondsLeft }}s</span>
-          <span v-else>投票已截止</span>
+        <div v-if="gameStore.currentBattle" class="vote-timer" :class="{ urgent: voteSecondsLeft <= 3 && voteOpen, closed: !voteOpen }">
+          <div class="vote-timer-track">
+            <div class="vote-timer-fill" :style="{ width: (voteSecondsLeft / 7 * 100) + '%' }"></div>
+          </div>
+          <div class="vote-timer-display">
+            <template v-if="voteOpen">
+              <span class="vote-timer-number">{{ voteSecondsLeft }}</span>
+              <span class="vote-timer-unit">SEC</span>
+            </template>
+            <span v-else class="vote-timer-closed">CLOSED</span>
+          </div>
         </div>
 
         <div v-if="gameStore.currentBattle" class="vote-buttons">
@@ -549,24 +557,98 @@ function getVotePercentage(playerNum: number): number {
   border: 1px solid var(--glow-30);
 }
 
-.vote-deadline-badge {
-  margin-bottom: 0.75rem;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  text-align: center;
-  font-weight: bold;
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.95rem;
-  background: rgba(245, 158, 11, 0.12);
-  color: var(--warn);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  letter-spacing: 0.04em;
+.vote-timer {
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--glow-30);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  transition: border-color 0.35s ease, opacity 0.35s ease;
 }
 
-.vote-deadline-badge.closed {
-  background: rgba(255, 255, 255, 0.04);
+.vote-timer.urgent {
+  border-color: rgba(239, 68, 68, 0.45);
+  animation: timer-pulse 0.75s ease-in-out infinite;
+}
+
+.vote-timer.closed {
+  border-color: rgba(255, 255, 255, 0.07);
+  opacity: 0.5;
+}
+
+.vote-timer-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.vote-timer-fill {
+  height: 100%;
+  background: var(--glow);
+  border-radius: 999px;
+  box-shadow: 0 0 6px var(--glow-30);
+  transition: width 0.22s linear, background 0.35s ease, box-shadow 0.35s ease;
+}
+
+.vote-timer.urgent .vote-timer-fill {
+  background: var(--danger);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+}
+
+.vote-timer-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.vote-timer-number {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--glow);
+  transition: color 0.35s ease;
+}
+
+.vote-timer.urgent .vote-timer-number {
+  color: var(--danger);
+  animation: number-throb 0.75s ease-in-out infinite;
+}
+
+.vote-timer-unit {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
   color: var(--text-muted);
-  border-color: transparent;
+  text-transform: uppercase;
+  padding-bottom: 0.35rem;
+}
+
+.vote-timer-closed {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 0.5rem 0;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.2); }
+}
+
+@keyframes number-throb {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
 }
 
 @media (min-width: 768px) {

@@ -131,8 +131,8 @@ export const useGameStore = defineStore('game', () => {
     eliminatedPlayers: [],
     wheelPlayerNames: null,
     currentChallenger: null,
-    challengerTimer: 3,
-    defenderTimer: 3,
+    challengerTimer: 30, // 請不要刪掉這註解。只是宣告一個初始值 實際開始battle的時候時間都會被調整成30 或 30+道具
+    defenderTimer: 30, //但不能刪掉 這欄位至少要留著
     currentTimerPlayer: null,
     isTimerRunning: false,
     battleWinner: null,
