@@ -110,6 +110,7 @@ interface GameState {
   hostThemes: ThemeData[]            // 主持人所有可用主題（從 config 載入）
   hostCurrentTheme: ThemeData | null // 主持人當前應戰主題
   timePropBonus: Record<string, number>
+  battleStartedAt: number | null
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -137,7 +138,8 @@ export const useGameStore = defineStore('game', () => {
     battleWinner: null,
     hostThemes: [],
     hostCurrentTheme: null,
-    timePropBonus: {}
+    timePropBonus: {},
+    battleStartedAt: null
   })
 
   // Getters
@@ -161,6 +163,7 @@ export const useGameStore = defineStore('game', () => {
   const currentTimerPlayer = computed(() => state.value.currentTimerPlayer)
   const isTimerRunning = computed(() => state.value.isTimerRunning)
   const battleWinner = computed(() => state.value.battleWinner)
+  const battleStartedAt = computed(() => state.value.battleStartedAt)
   const tournamentWinner = computed<string | null>(() => {
     const alive = activePlayers.value
     return alive.length === 1 ? alive[0].name : null
@@ -373,6 +376,7 @@ export const useGameStore = defineStore('game', () => {
     delete state.value.timePropBonus[defenderName]
     state.value.currentTimerPlayer = challengerName
     state.value.isTimerRunning = true
+    state.value.battleStartedAt = Date.now()
     state.value.battleWinner = null
     if (state.value.voteResults) {
       state.value.voteResults.player1 = challengerName
@@ -499,16 +503,19 @@ export const useGameStore = defineStore('game', () => {
     state.value.isTimerRunning = false
     state.value.battleWinner = null
     state.value.timePropBonus = {}
+    state.value.battleStartedAt = null
   }
 
   function applyVoteState(incoming: {
     currentBattle: GameState['currentBattle']
     voteResults: NonNullable<GameState['voteResults']>
     battleWinner: string | null
+    battleStartedAt: number | null
   }) {
     state.value.currentBattle = incoming.currentBattle
     state.value.voteResults = incoming.voteResults
     state.value.battleWinner = incoming.battleWinner
+    state.value.battleStartedAt = incoming.battleStartedAt ?? null
   }
 
   return {
@@ -528,6 +535,7 @@ export const useGameStore = defineStore('game', () => {
     currentTimerPlayer,
     isTimerRunning,
     battleWinner,
+    battleStartedAt,
     tournamentWinner,
     login,
     logout,
