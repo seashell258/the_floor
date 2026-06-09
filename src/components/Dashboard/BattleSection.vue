@@ -331,8 +331,8 @@ function endBattle() {
 }
 
 .battle-image {
-  width: 80%;
-  max-height: 470px;
+  width: 90%;
+  max-height: 600px;
   object-fit: cover;
   border-radius: 12px;
   margin: 0 auto 1rem;
@@ -485,7 +485,7 @@ function endBattle() {
 }
 
 .vote-bar {
-  width: 80px;
+  width: 120px;
   flex-shrink: 0;
   display: flex;
   flex-direction: row;
@@ -539,12 +539,12 @@ function endBattle() {
 
 .vote-name {
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
-  font-size: 0.7rem;
+  font-size: 1.4rem;
   color: var(--text-muted);
   writing-mode: vertical-rl;
   text-orientation: mixed;
   line-height: 1;
-  max-height: 60px;
+  height: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
 }

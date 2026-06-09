@@ -1,6 +1,6 @@
 <template>
   <div id="app" class="app-container">
-    <Toaster position="top-center" richColors />
+    <Toaster position="top-center" theme="dark" />
     <nav v-if="gameStore.currentVoter" class="navbar">
       <h1>The Cat Floor</h1>
       <div class="nav-user">
@@ -19,14 +19,18 @@
 import { useRouter } from 'vue-router'
 import { useGameStore } from './pinia/store'
 import { playersConfig, hostConfig } from './config/playersConfig'
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { Toaster } from 'vue-sonner'
 import 'vue-sonner/style.css'
+import { socket } from './socket'
 
 const router = useRouter()
 const gameStore = useGameStore()
 
-// 应用启动时初始化玩家
+function onVoteState(data: Parameters<typeof gameStore.applyVoteState>[0]) {
+  gameStore.applyVoteState(data)
+}
+
 onMounted(() => {
   if (gameStore.players.length === 0) {
     gameStore.initializePlayersFromConfig(playersConfig)
@@ -34,6 +38,11 @@ onMounted(() => {
   if (gameStore.hostThemes.length === 0) {
     gameStore.initializeHostThemes(hostConfig)
   }
+  socket.on('voteState', onVoteState)
+})
+
+onUnmounted(() => {
+  socket.off('voteState', onVoteState)
 })
 
 function handleLogout() {

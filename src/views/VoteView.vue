@@ -123,6 +123,7 @@
 import { computed, ref } from 'vue'
 import { useGameStore } from '../pinia/store'
 import { getThemeClass } from '../utils/themeUtils'
+import { socket } from '../socket'
 
 const gameStore = useGameStore()
 const activeTab = ref<'vote' | 'status'>('vote')
@@ -134,10 +135,10 @@ const selectableKeys = computed(() =>
 function vote(playerChoice: number) {
   const voterName = gameStore.currentVoter?.name
   if (!voterName || !gameStore.voteResults) return
-  
+
   if (hasVoted.value) return
-  
-  gameStore.recordVote(playerChoice, voterName)
+
+  socket.emit('recordVote', { playerChoice, voterName })
 }
 
 function hasVotedFor(playerNum: number): boolean {

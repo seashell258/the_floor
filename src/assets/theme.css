@@ -28,6 +28,35 @@
   box-sizing: border-box;
 }
 
+/* Sonner toast — match app theme */
+[data-sonner-toaster][data-sonner-theme='dark'] {
+  --normal-bg:          #000d2b;
+  --normal-bg-hover:    #021b4a;
+  --normal-border:      rgba(25, 233, 255, 0.25);
+  --normal-border-hover:rgba(25, 233, 255, 0.45);
+  --normal-text:        #e2f4f8;
+
+  --error-bg:           #000d2b;
+  --error-border:       rgba(255, 70, 85, 0.55);
+  --error-text:         #ff8892;
+
+  --success-bg:         #000d2b;
+  --success-border:     rgba(25, 233, 255, 0.45);
+  --success-text:       #19e9ff;
+
+  --warning-bg:         #000d2b;
+  --warning-border:     rgba(245, 158, 11, 0.45);
+  --warning-text:       #f59e0b;
+
+  --info-bg:            #000d2b;
+  --info-border:        rgba(25, 233, 255, 0.30);
+  --info-text:          #e2f4f8;
+}
+
+[data-sonner-toast] {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif !important;
+}
+
 body {
   margin: 0;
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
