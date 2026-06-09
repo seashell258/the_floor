@@ -12,7 +12,8 @@ const io = new Server(httpServer, {
 let voteState = {
   currentBattle: null,
   voteResults: { player1: '', player2: '', votes1: 0, votes2: 0, voters1: [], voters2: [] },
-  battleWinner: null
+  battleWinner: null,
+  battleStartedAt: null
 }
 
 io.on('connection', (socket) => {
