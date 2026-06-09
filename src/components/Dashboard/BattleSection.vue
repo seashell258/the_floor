@@ -231,14 +231,6 @@ function endBattle() {
   box-shadow: 0 0 20px var(--glow-10);
 }
 
-.section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--text);
-  font-family: 'Chakra Petch', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
 .battle-section {
   min-height: 720px;
   display: flex;
@@ -354,30 +346,6 @@ function endBattle() {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-}
-
-.answer-header {
-  display: flex;
-  justify-content: flex-start;
-  gap: 2rem;
-  margin-bottom: 1rem;
-}
-
-.answer-side {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.answer-player {
-  font-weight: bold;
-  color: var(--text);
-  font-family: 'Chakra Petch', sans-serif;
-}
-
-.answer-votes {
-  font-size: 0.95rem;
-  color: var(--text-muted);
 }
 
 .answer-body {
@@ -514,5 +482,70 @@ function endBattle() {
 
 .end-battle-btn:hover {
   background: var(--glow-10);
+}
+
+.vote-bar {
+  width: 80px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.vote-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.vote-count {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--text);
+  line-height: 1;
+}
+
+.vote-track {
+  flex: 1;
+  width: 100%;
+  background: var(--bg-surface);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.vote-fill {
+  width: 100%;
+  border-radius: 4px;
+  transition: height 0.4s ease;
+}
+
+.p1-fill {
+  background: var(--glow);
+  box-shadow: 0 0 8px var(--glow-30);
+}
+
+.p2-fill {
+  background: var(--warn);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.vote-name {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  line-height: 1;
+  max-height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
