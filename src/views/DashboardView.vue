@@ -55,7 +55,8 @@ function pushVoteState() {
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
-    battleWinner: gameStore.battleWinner
+    battleWinner: gameStore.battleWinner,
+    battleStartedAt: gameStore.battleStartedAt
   })
 }
 
