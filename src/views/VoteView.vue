@@ -142,7 +142,13 @@ let countdownInterval: number | null = null
 
 watch(() => gameStore.currentBattle, (battle) => {
   if (battle) {
-    countdownInterval = window.setInterval(() => { now.value = Date.now() }, 200)
+    countdownInterval = window.setInterval(() => {
+      now.value = Date.now()
+      if (voteSecondsLeft.value === 0 && countdownInterval !== null) {
+        clearInterval(countdownInterval)
+        countdownInterval = null
+      }
+    }, 200)
   } else {
     if (countdownInterval !== null) {
       clearInterval(countdownInterval)
