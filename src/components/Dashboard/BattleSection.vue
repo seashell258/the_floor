@@ -216,7 +216,8 @@ watch(battleWinner, (winner) => {
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
-    battleWinner: winner
+    battleWinner: winner,
+    battleStartedAt: gameStore.battleStartedAt
   })
 })
 
@@ -226,7 +227,8 @@ function endBattle() {
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
-    battleWinner: gameStore.battleWinner
+    battleWinner: gameStore.battleWinner,
+    battleStartedAt: gameStore.battleStartedAt
   })
   gameStore.clearChallenger()
   emit('battle-ended')
