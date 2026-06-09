@@ -1,7 +1,5 @@
 <template>
   <section class="section battle-section">
-    <h3>開始battle</h3>
-
     <div class="battle-row">
       <div class="battle-main">
         <div class="battle-stage">
@@ -47,16 +45,6 @@
         </div>
 
         <div class="answer-panel">
-          <div class="answer-header">
-            <div class="answer-side">
-              <span class="answer-player">{{ voteResults?.player1 || 'Player 1' }}</span>
-              <span class="answer-votes">{{ voteResults?.votes1 ?? 0 }} 票</span>
-            </div>
-            <div class="answer-side">
-              <span class="answer-player">{{ voteResults?.player2 || 'Player 2' }}</span>
-              <span class="answer-votes">{{ voteResults?.votes2 ?? 0 }} 票</span>
-            </div>
-          </div>
           <div class="answer-body">
             <p v-if="showAnswer">{{ currentAnswer || selectedThemeAnswers[currentPhotoIndex] || '暫無答案' }}</p>
             <p v-else></p>
