@@ -75,6 +75,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useGameStore } from '../../pinia/store'
+import { socket } from '../../socket'
 
 const emit = defineEmits<{ (e: 'battle-ended'): void }>()
 
@@ -97,6 +98,14 @@ const defenderTimer = computed(() => gameStore.defenderTimer)
 const currentTimerPlayer = computed(() => gameStore.currentTimerPlayer)
 const isTimerRunning = computed(() => gameStore.isTimerRunning)
 const battleWinner = computed(() => gameStore.battleWinner)
+
+function getVotePercent(playerNum: 1 | 2): number {
+  const v1 = voteResults.value?.votes1 ?? 0
+  const v2 = voteResults.value?.votes2 ?? 0
+  const total = v1 + v2
+  if (total === 0) return 0
+  return playerNum === 1 ? (v1 / total) * 100 : (v2 / total) * 100
+}
 
 const currentPhotoIndex = ref(0)
 const showAnswer = ref(false)
@@ -179,6 +188,11 @@ let autoEndTimeout: ReturnType<typeof setTimeout> | null = null
 
 watch(battleWinner, (winner) => {
   if (!winner) return
+  socket.emit('pushVoteState', {
+    currentBattle: gameStore.currentBattle,
+    voteResults: gameStore.voteResults,
+    battleWinner: winner
+  })
   autoEndTimeout = setTimeout(() => {
     endBattle()
   }, 4000)
@@ -194,6 +208,11 @@ function endBattle() {
     autoEndTimeout = null
   }
   gameStore.resetBattle()
+  socket.emit('pushVoteState', {
+    currentBattle: gameStore.currentBattle,
+    voteResults: gameStore.voteResults,
+    battleWinner: gameStore.battleWinner
+  })
   gameStore.clearChallenger()
   emit('battle-ended')
 }
@@ -363,7 +382,7 @@ function endBattle() {
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1rem;
-  min-height: 48px;
+  min-height: 65px;
   background: var(--bg-panel);
   border-radius: 10px;
   color: var(--text);
