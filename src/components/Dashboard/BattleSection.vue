@@ -207,12 +207,12 @@ function endBattle() {
     clearTimeout(autoEndTimeout)
     autoEndTimeout = null
   }
-  gameStore.resetBattle()
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
     battleWinner: gameStore.battleWinner
   })
+  gameStore.resetBattle()
   gameStore.clearChallenger()
   emit('battle-ended')
 }
