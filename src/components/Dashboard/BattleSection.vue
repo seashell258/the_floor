@@ -1,6 +1,22 @@
 <template>
   <section class="section battle-section">
     <div class="battle-row">
+      <div class="vote-bar">
+        <div class="vote-col">
+          <span class="vote-count">{{ voteResults?.votes1 ?? 0 }}</span>
+          <div class="vote-track">
+            <div class="vote-fill p1-fill" :style="{ height: getVotePercent(1) + '%' }"></div>
+          </div>
+          <span class="vote-name">{{ voteResults?.player1 || 'P1' }}</span>
+        </div>
+        <div class="vote-col">
+          <span class="vote-count">{{ voteResults?.votes2 ?? 0 }}</span>
+          <div class="vote-track">
+            <div class="vote-fill p2-fill" :style="{ height: getVotePercent(2) + '%' }"></div>
+          </div>
+          <span class="vote-name">{{ voteResults?.player2 || 'P2' }}</span>
+        </div>
+      </div>
       <div class="battle-main">
         <div class="battle-stage">
           <div v-if="battleInfo" class="battle-card">
