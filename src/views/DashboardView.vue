@@ -56,7 +56,22 @@ function pushVoteState() {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
     battleWinner: gameStore.battleWinner,
-    battleStartedAt: gameStore.battleStartedAt
+    battleStartedAt: gameStore.battleStartedAt,
+    playersSnapshot: gameStore.players.map(p => ({
+      name: p.name,
+      eliminated: p.eliminated,
+      winStreak: p.winStreak,
+      prop: p.prop,
+      themeItems: p.themeStack.items.map(t => ({
+        name: t.name,
+        isConsumed: t.isConsumed,
+        isActivated: t.isActivated
+      }))
+    })),
+    hostThemesSnapshot: gameStore.hostThemes.map(t => ({
+      name: t.name,
+      isConsumed: t.isConsumed
+    }))
   })
 }
 
@@ -99,6 +114,7 @@ function handleThemeClick(player: any, theme: any) {
 
 function permanentlyRemovePlayer(playerName: string) {
   gameStore.permanentlyRemovePlayer(playerName)
+  pushVoteState()
 }
 
 function handleStartHostBattle(challengerName: string) {
