@@ -25,9 +25,20 @@
         <!-- ── Header ── -->
         <div class="player-card-header">
           <h4>{{ player.name }}</h4>
-          <div class="player-badge">
-            <span>連勝</span>
-            <strong>{{ player.winStreak }}</strong>
+          <div class="header-right" @click.stop>
+            <button
+              v-if="player.prop"
+              class="prop-btn"
+              @click="handlePropClick(player)"
+              :title="player.prop === 'time' ? '使用：時間+3秒' : '使用：盾牌'"
+            >
+              <Clock v-if="player.prop === 'time'" :size="13" />
+              <Shield v-else :size="13" />
+            </button>
+            <div class="player-badge">
+              <span>連勝</span>
+              <strong>{{ player.winStreak }}</strong>
+            </div>
           </div>
         </div>
 
@@ -66,24 +77,17 @@
           </div>
         </div>
 
-        <!-- ── Prop ── -->
-        <div v-if="player.prop" class="prop-area" @click.stop>
-          <button
-            class="prop-btn"
-            @click="handlePropClick(player)"
-            :title="player.prop === 'time' ? '使用：時間+3秒' : '使用：盾牌'"
-          >
-            <Clock v-if="player.prop === 'time'" :size="20" />
-            <Shield v-else :size="20" />
-          </button>
-        </div>
-
-        <!-- ── Footer ── -->
+        <!-- ── Footer: lives dots + eliminated tag ── -->
         <div class="player-footer">
-          <span class="lives-count">命數 {{ player.themeStack.items.filter((t: any) => !t.isConsumed).length }}</span>
-          <div class="status-indicator" :class="{ active: !player.eliminated }">
-            {{ player.eliminated ? '已淘汰' : '存活' }}
+          <div class="lives-dots">
+            <span
+              v-for="(theme, i) in player.themeStack.items"
+              :key="i"
+              class="life-dot"
+              :class="{ consumed: theme.isConsumed }"
+            />
           </div>
+          <span v-if="player.eliminated" class="eliminated-tag">已淘汰</span>
         </div>
       </div>
     </div>
@@ -388,6 +392,7 @@ function handleStartDuel() {
 /* ─── Player Card ─── */
 
 .player-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -395,8 +400,28 @@ function handleStartDuel() {
   background: var(--bg-surface);
   border-radius: 14px;
   border: 1px solid var(--glow-30);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: opacity 0.18s ease, filter 0.18s ease,
+              transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              border-color 0.18s, box-shadow 0.18s;
   cursor: default;
+}
+
+/* ─── Arena Select Spotlight ─── */
+@media (min-width: 768px) {
+  .player-list:has(.player-card.battle-ready:hover) .player-card {
+    opacity: 0.16;
+    filter: blur(0.6px);
+    transform: scale(0.97);
+  }
+
+  .player-list:has(.player-card.battle-ready:hover) .player-card.battle-ready:hover {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1.05) translateY(-4px);
+    border-color: var(--glow);
+    box-shadow: 0 20px 60px rgba(25, 233, 255, 0.22), 0 0 0 1px var(--glow);
+    z-index: 2;
+  }
 }
 
 /* Invite to tap when a challenger is ready */
@@ -438,7 +463,7 @@ function handleStartDuel() {
 
 .player-card-header h4 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-family: 'Chakra Petch', sans-serif;
   color: var(--text);
   white-space: nowrap;
@@ -446,11 +471,18 @@ function handleStartDuel() {
   text-overflow: ellipsis;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
 .player-badge {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
-  padding: 0.4rem 0.7rem;
+  padding: 0.35rem 0.6rem;
   background: rgba(245, 158, 11, 0.12);
   border-radius: 999px;
   flex-shrink: 0;
@@ -458,14 +490,14 @@ function handleStartDuel() {
 
 .player-badge span {
   color: var(--warn);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-family: 'Chakra Petch', sans-serif;
   line-height: 1;
 }
 
 .player-badge strong {
   color: var(--warn);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-family: 'Chakra Petch', sans-serif;
   line-height: 1.2;
 }
@@ -672,18 +704,13 @@ function handleStartDuel() {
   color: var(--glow);
 }
 
-/* ─── Prop ─── */
-
-.prop-area {
-  display: flex;
-  gap: 0.5rem;
-}
+/* ─── Prop (inline in header) ─── */
 
 .prop-btn {
   background: none;
-  border: 2px solid var(--glow-30);
-  border-radius: 8px;
-  padding: 0.25rem 0.6rem;
+  border: 1.5px solid var(--glow-30);
+  border-radius: 6px;
+  padding: 0.22rem 0.45rem;
   cursor: pointer;
   color: var(--glow);
   transition: border-color 0.15s, background 0.15s;
@@ -697,36 +724,43 @@ function handleStartDuel() {
   background: var(--glow-10);
 }
 
-/* ─── Footer ─── */
+/* ─── Footer: lives dots ─── */
 
 .player-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.15rem;
+  margin-top: 0.1rem;
 }
 
-.lives-count {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-family: 'Chakra Petch', sans-serif;
+.lives-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
 }
 
-.status-indicator {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--danger);
-  border-radius: 5px;
-  font-size: 0.78rem;
+.life-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 5px rgba(25, 233, 255, 0.55);
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.life-dot.consumed {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.eliminated-tag {
+  font-size: 0.72rem;
   font-weight: 700;
   font-family: 'Chakra Petch', sans-serif;
-}
-
-.status-indicator.active {
-  background: var(--glow-10);
-  color: var(--glow);
-  border: 1px solid var(--glow-30);
+  color: var(--danger);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* ─── FABs & Panels (unchanged) ─── */
