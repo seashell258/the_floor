@@ -60,9 +60,12 @@
           <label class="panel-label">選擇玩家</label>
           <select v-model="drawSelectedPlayerName" class="panel-select">
             <option v-for="p in gameStore.players" :key="p.name" :value="p.name">
-              {{ p.name }}
+              {{ p.streakRewardCharges === 1 ? '⚡ ' : '' }}{{ p.name }}
             </option>
           </select>
+          <p v-if="drawSelectedPlayerName && !selectedPlayerHasCharge" class="no-charge-warning">
+            此玩家目前無連勝獎勵可抽
+          </p>
         </div>
         <button class="duel-btn" :disabled="!drawSelectedPlayerName" @click="handleDrawReward">
           開始抽獎
@@ -157,6 +160,10 @@ const revivalConfirmPlayer = ref<string | null>(null)
 const drawSelectedPlayerName = ref('')
 const rewardOptions: Array<'time' | 'shield'> = ['time', 'shield']
 
+const selectedPlayerHasCharge = computed(() =>
+  gameStore.players.find(p => p.name === drawSelectedPlayerName.value)?.streakRewardCharges === 1
+)
+
 const selectableKeys = computed(() =>
   gameStore.currentChallenger ? gameStore.selectableThemeKeys : null
 )
@@ -216,6 +223,7 @@ function handleDrawReward() {
   const prop = rewardOptions[Math.floor(Math.random() * rewardOptions.length)]
   gameStore.applyProp(drawSelectedPlayerName.value, prop)
   gameStore.recordDrawResult(drawSelectedPlayerName.value, prop === 'time' ? '時間+3秒' : '盾牌')
+  gameStore.consumeStreakRewardCharge(drawSelectedPlayerName.value)
 }
 
 function onHostThemeChange() {
@@ -563,6 +571,13 @@ function handleStartDuel() {
 
 .draw-result-reward {
   font-weight: 700;
+  color: var(--warn);
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.no-charge-warning {
+  margin: 0;
+  font-size: 0.8rem;
   color: var(--warn);
   font-family: 'Chakra Petch', sans-serif;
 }
