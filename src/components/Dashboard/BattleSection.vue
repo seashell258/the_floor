@@ -217,7 +217,22 @@ watch(battleWinner, (winner) => {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
     battleWinner: winner,
-    battleStartedAt: gameStore.battleStartedAt
+    battleStartedAt: gameStore.battleStartedAt,
+    playersSnapshot: gameStore.players.map(p => ({
+      name: p.name,
+      eliminated: p.eliminated,
+      winStreak: p.winStreak,
+      prop: p.prop,
+      themeItems: p.themeStack.items.map(t => ({
+        name: t.name,
+        isConsumed: t.isConsumed,
+        isActivated: t.isActivated
+      }))
+    })),
+    hostThemesSnapshot: gameStore.hostThemes.map(t => ({
+      name: t.name,
+      isConsumed: t.isConsumed
+    }))
   })
 })
 
@@ -228,7 +243,22 @@ function endBattle() {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
     battleWinner: gameStore.battleWinner,
-    battleStartedAt: gameStore.battleStartedAt
+    battleStartedAt: gameStore.battleStartedAt,
+    playersSnapshot: gameStore.players.map(p => ({
+      name: p.name,
+      eliminated: p.eliminated,
+      winStreak: p.winStreak,
+      prop: p.prop,
+      themeItems: p.themeStack.items.map(t => ({
+        name: t.name,
+        isConsumed: t.isConsumed,
+        isActivated: t.isActivated
+      }))
+    })),
+    hostThemesSnapshot: gameStore.hostThemes.map(t => ({
+      name: t.name,
+      isConsumed: t.isConsumed
+    }))
   })
   gameStore.clearChallenger()
   emit('battle-ended')
@@ -268,7 +298,7 @@ onUnmounted(() => stopBattleMusic())
 }
 
 .battle-section {
-  min-height: 720px;
+  height: calc(100dvh - 8rem);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -303,6 +333,7 @@ onUnmounted(() => stopBattleMusic())
   gap: 1rem;
   flex: 1;
   align-items: stretch;
+  min-height: 0;
 }
 
 .battle-main {
@@ -310,6 +341,7 @@ onUnmounted(() => stopBattleMusic())
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 .battle-stage {
@@ -317,6 +349,7 @@ onUnmounted(() => stopBattleMusic())
   display: flex;
   align-items: stretch;
   margin-bottom: 1rem;
+  min-height: 0;
 }
 
 .battle-card,
@@ -333,6 +366,8 @@ onUnmounted(() => stopBattleMusic())
 
 .battle-card {
   overflow: hidden;
+  min-height: 0;
+  justify-content: flex-start;
 }
 
 .battle-meta {
@@ -392,11 +427,11 @@ onUnmounted(() => stopBattleMusic())
 }
 
 .battle-image {
-  width: 90%;
-  height: 600px;
-  object-fit: cover;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
   border-radius: 12px;
-  margin: 0 auto 1rem;
   display: block;
 }
 
