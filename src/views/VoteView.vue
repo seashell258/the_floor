@@ -735,27 +735,32 @@ function getVotePercentage(playerNum: number): number {
 /* ── Host themes floating trigger ── */
 .host-themes-btn {
   position: fixed;
-  bottom: 1.25rem;
+  /* respect iPhone home bar */
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   left: 1rem;
   z-index: 100;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.6rem 0.85rem 0.6rem 0.75rem;
+  gap: 0.5rem;
+  /* min-height: 44px — iOS minimum touch target */
+  min-height: 44px;
+  padding: 0 1rem 0 0.85rem;
   background: rgba(0, 13, 43, 0.88);
   border: 1px solid rgba(25, 233, 255, 0.28);
   border-radius: 999px;
   color: rgba(226, 244, 248, 0.72);
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   cursor: pointer;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
   transition: border-color 0.2s, color 0.2s, box-shadow 0.2s, background 0.2s;
   -webkit-tap-highlight-color: transparent;
+  /* prevent text selection on repeated taps */
+  user-select: none;
 }
 
 .host-btn-sword {
@@ -772,11 +777,12 @@ function getVotePercentage(playerNum: number): number {
   display: flex;
   align-items: baseline;
   gap: 0.05rem;
-  padding: 0.15rem 0.45rem;
+  padding: 0.2rem 0.5rem;
   background: rgba(25, 233, 255, 0.1);
   border: 1px solid rgba(25, 233, 255, 0.2);
   border-radius: 999px;
-  font-size: 0.68rem;
+  /* 0.78rem ≈ 12.5px — readable on mobile */
+  font-size: 0.78rem;
   line-height: 1;
 }
 
@@ -790,7 +796,7 @@ function getVotePercentage(playerNum: number): number {
   color: var(--text-muted);
 }
 
-.host-themes-btn:hover,
+/* open state always applies (not hover-dependent) */
 .host-themes-btn.is-open {
   border-color: rgba(25, 233, 255, 0.55);
   color: var(--text);
@@ -798,9 +804,21 @@ function getVotePercentage(playerNum: number): number {
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4), 0 0 16px rgba(25, 233, 255, 0.12);
 }
 
-.host-themes-btn:hover .host-btn-sword,
 .host-themes-btn.is-open .host-btn-sword {
   opacity: 1;
+}
+
+/* hover only on devices that support it (not mobile touch) */
+@media (hover: hover) and (pointer: fine) {
+  .host-themes-btn:hover {
+    border-color: rgba(25, 233, 255, 0.55);
+    color: var(--text);
+    background: rgba(25, 233, 255, 0.07);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4), 0 0 16px rgba(25, 233, 255, 0.12);
+  }
+  .host-themes-btn:hover .host-btn-sword {
+    opacity: 1;
+  }
 }
 
 /* ── Overlay fade transition ── */
@@ -831,9 +849,13 @@ function getVotePercentage(playerNum: number): number {
   background: var(--bg-panel);
   border-top: 1px solid rgba(25, 233, 255, 0.18);
   border-radius: 18px 18px 0 0;
-  max-height: 55vh;
+  /* 60vh gives room to see the content without covering whole screen on phone */
+  max-height: 60vh;
   overflow-y: auto;
-  padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  /* always leave breathing room above the iPhone home bar */
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 1rem);
+  /* smooth momentum scroll on iOS */
+  -webkit-overflow-scrolling: touch;
   animation: host-panel-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -865,7 +887,8 @@ function getVotePercentage(playerNum: number): number {
   gap: 0.45rem;
   color: var(--text);
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.82rem;
+  /* 0.9rem ≈ 14.4px — comfortable mobile read */
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -878,19 +901,19 @@ function getVotePercentage(playerNum: number): number {
 
 .host-panel-header-stat {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .stat-avail {
   color: var(--glow);
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 1rem;
 }
 
 .stat-sep,
 .stat-unit {
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
 }
 
 .stat-total {
@@ -906,7 +929,8 @@ function getVotePercentage(playerNum: number): number {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.8rem 1.25rem;
+  /* 0.9rem top/bottom → min ~52px row height — comfortable scan on phone */
+  padding: 0.9rem 1.25rem;
   transition: background 0.15s;
 }
 
@@ -920,12 +944,12 @@ function getVotePercentage(playerNum: number): number {
 
 .row-index {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: rgba(25, 233, 255, 0.55);
   flex-shrink: 0;
-  width: 1.4rem;
+  width: 1.6rem;
 }
 
 .host-theme-row.consumed .row-index {
@@ -935,7 +959,8 @@ function getVotePercentage(playerNum: number): number {
 .row-name {
   flex: 1;
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
-  font-size: 0.95rem;
+  /* 1rem ≈ 16px — primary readable text size for mobile */
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text);
   letter-spacing: 0.02em;
@@ -943,11 +968,11 @@ function getVotePercentage(playerNum: number): number {
 
 .row-status {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.22rem 0.5rem;
+  padding: 0.28rem 0.6rem;
   border-radius: 4px;
   flex-shrink: 0;
 }
