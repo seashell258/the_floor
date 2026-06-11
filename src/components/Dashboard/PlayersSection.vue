@@ -5,7 +5,7 @@
     <div v-if="gameStore.currentChallenger" class="challenger-banner">
       <span class="cb-eyebrow">挑戰者</span>
       <span class="cb-name">{{ gameStore.currentChallenger.challenger.name }}</span>
-      <span class="cb-sub">選擇對手</span>
+
     </div>
     <div v-else class="no-challenger-hint">尚無挑戰者</div>
 
@@ -49,9 +49,11 @@
           <span class="self-label">本輪挑戰者</span>
         </div>
         <div v-else-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme">
-          <span class="primary-label">決鬥主題</span>
+          <div class="primary-eyebrow">
+            <span class="primary-label">決鬥主題</span>
+            <Swords :size="11" class="primary-icon" />
+          </div>
           <span class="primary-name">{{ topAvailableTheme(player)!.name }}</span>
-          <Swords :size="14" class="primary-icon" />
         </div>
         <div v-else-if="!player.eliminated" class="primary-theme exhausted">
           <span class="primary-name muted">所有主題已消耗</span>
@@ -398,10 +400,10 @@ function handleStartDuel() {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  padding: 1rem;
+  gap: 0.85rem;
+  padding: 1.25rem;
   background: var(--bg-surface);
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--glow-30);
   transition: opacity 0.18s ease, filter 0.18s ease,
               transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -466,7 +468,7 @@ function handleStartDuel() {
 
 .player-card-header h4 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   font-family: 'Chakra Petch', sans-serif;
   color: var(--text);
   white-space: nowrap;
@@ -509,13 +511,14 @@ function handleStartDuel() {
 
 .primary-theme {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-height: 56px;
-  padding: 0.75rem 1rem;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 90px;
+  padding: 1rem 1.15rem;
   background: rgba(25, 233, 255, 0.06);
   border: 1px solid var(--glow-30);
-  border-radius: 10px;
+  border-radius: 12px;
   transition: background 0.2s, border-color 0.2s;
 }
 
@@ -529,8 +532,15 @@ function handleStartDuel() {
 }
 
 .primary-theme.exhausted {
+  align-items: center;
   background: rgba(255, 255, 255, 0.03);
   border-color: transparent;
+}
+
+.primary-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 /* ─── Self-Challenger Lock ─── */
@@ -575,39 +585,35 @@ function handleStartDuel() {
 .primary-label {
   font-family: 'Chakra Petch', sans-serif;
   font-size: 0.6rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--glow);
-  opacity: 0.55;
-  flex-shrink: 0;
+  opacity: 0.5;
 }
 
 .primary-name {
-  flex: 1;
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .primary-name.muted {
   color: var(--text-muted);
   font-weight: 400;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
 }
 
 .primary-icon {
   color: var(--glow);
   opacity: 0;
-  flex-shrink: 0;
   transition: opacity 0.15s;
 }
 
 .battle-ready:hover .primary-icon {
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 /* ─── Secondary Themes ─── */
@@ -616,7 +622,7 @@ function handleStartDuel() {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .secondary-label {
@@ -630,12 +636,12 @@ function handleStartDuel() {
 }
 
 .theme-pill {
-  padding: 0.35rem 0.7rem;
+  padding: 0.42rem 0.85rem;
   border-radius: 999px;
   background: var(--glow-10);
   color: var(--glow);
   border: 1px solid var(--glow-30);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
@@ -738,16 +744,16 @@ function handleStartDuel() {
 
 .lives-dots {
   display: flex;
-  gap: 5px;
+  gap: 7px;
   align-items: center;
 }
 
 .life-dot {
-  width: 7px;
-  height: 7px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--glow);
-  box-shadow: 0 0 5px rgba(25, 233, 255, 0.55);
+  box-shadow: 0 0 6px rgba(25, 233, 255, 0.6);
   transition: opacity 0.15s;
   flex-shrink: 0;
 }
