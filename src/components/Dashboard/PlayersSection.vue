@@ -84,7 +84,10 @@
               v-for="(theme, i) in player.themeStack.items"
               :key="i"
               class="life-dot"
-              :class="{ consumed: theme.isConsumed }"
+              :class="{
+                consumed: theme.isConsumed,
+                locked: !theme.isActivated && !theme.isConsumed
+              }"
             />
           </div>
           <span v-if="player.eliminated" class="eliminated-tag">已淘汰</span>
@@ -751,6 +754,12 @@ function handleStartDuel() {
 
 .life-dot.consumed {
   background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.life-dot.locked {
+  background: transparent;
+  border: 1.5px dashed rgba(255, 255, 255, 0.22);
   box-shadow: none;
 }
 
