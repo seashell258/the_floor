@@ -38,7 +38,8 @@
         <div v-if="isCurrentChallenger(player)" class="self-zone">
           <div class="self-bracket tl" /><div class="self-bracket tr" />
           <div class="self-bracket bl" /><div class="self-bracket br" />
-          <span class="self-label">本輪挑戰者</span>
+          <span class="self-eyebrow">本輪</span>
+          <span class="self-big">挑戰者</span>
         </div>
         <div v-else-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme">
           <div class="primary-eyebrow">
@@ -490,8 +491,9 @@ function handleStartDuel() {
   border: 1px solid rgba(255, 190, 40, 0.3);
   border-radius: 12px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+  gap: 0.3rem;
   background: rgba(255, 190, 40, 0.04);
   padding: 1rem 1.15rem;
 }
@@ -508,12 +510,20 @@ function handleStartDuel() {
 .self-bracket.bl { bottom: 5px; left: 5px;  border-bottom: 1.5px solid rgba(255, 190, 40, 0.8); border-left:   1.5px solid rgba(255, 190, 40, 0.8); }
 .self-bracket.br { bottom: 5px; right: 5px; border-bottom: 1.5px solid rgba(255, 190, 40, 0.8); border-right:  1.5px solid rgba(255, 190, 40, 0.8); }
 
-.self-label {
+.self-eyebrow {
   font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.68rem;
-  letter-spacing: 0.26em;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(255, 190, 40, 0.75);
+  color: rgba(255, 190, 40, 0.5);
+}
+
+.self-big {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: rgba(255, 190, 40, 0.88);
+  line-height: 1.25;
 }
 
 .primary-label {
@@ -557,7 +567,7 @@ function handleStartDuel() {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  opacity: 0;
+  opacity: 0.28;
   transition: opacity 0.18s ease;
 }
 
@@ -679,7 +689,8 @@ function handleStartDuel() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.1rem;
+  margin-top: auto;
+  padding-top: 0.4rem;
 }
 
 .lives-dots {
