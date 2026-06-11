@@ -54,9 +54,13 @@
 
         <div v-if="battleWinner && battleInfo" class="result-panel">
           <div class="winner-announcement">
-            {{ battleWinner }} 勝利！
+            <template v-if="isHostBattle">
+              <template v-if="battleWinner === '主持人'">主持人勝利，{{ hostBattlePlayerName }}解鎖失敗</template>
+              <template v-else>{{ hostBattlePlayerName }}勝利，解鎖多一個主題!</template>
+            </template>
+            <template v-else>{{ battleWinner }} 勝利！</template>
           </div>
-          <div class="result-detail">
+          <div v-if="!isHostBattle" class="result-detail">
             <span class="loser-name">
               {{ battleWinner === battleInfo.player1Name ? battleInfo.player2Name : battleInfo.player1Name }}
               的第一順位主題已消耗
@@ -78,6 +82,22 @@
       </div>
     </div>
   </section>
+
+  <Teleport to="body">
+    <div
+      v-if="showContinueDialog"
+      class="continue-overlay"
+      @click.self="confirmRestart"
+    >
+      <div class="continue-dialog">
+        <p class="continue-question">讓 <strong>{{ gameStore.battleWinner }}</strong> 繼續挑戰？</p>
+        <div class="continue-actions">
+          <button type="button" class="continue-btn primary" @click="confirmContinue">繼續挑戰</button>
+          <button type="button" class="continue-btn secondary" @click="confirmRestart">重新選人</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -112,6 +132,13 @@ const defenderTimer = computed(() => gameStore.defenderTimer)
 const currentTimerPlayer = computed(() => gameStore.currentTimerPlayer)
 const isTimerRunning = computed(() => gameStore.isTimerRunning)
 const battleWinner = computed(() => gameStore.battleWinner)
+const isHostBattle = computed(() =>
+  battleInfo.value?.player1Name === '主持人' || battleInfo.value?.player2Name === '主持人'
+)
+const hostBattlePlayerName = computed(() => {
+  if (!battleInfo.value) return ''
+  return battleInfo.value.player1Name === '主持人' ? battleInfo.value.player2Name : battleInfo.value.player1Name
+})
 
 function getVotePercent(playerNum: 1 | 2): number {
   const v1 = voteResults.value?.votes1 ?? 0
@@ -129,6 +156,7 @@ const borderFlashClass = computed(() => ({
 
 const currentPhotoIndex = ref(0)
 const showAnswer = ref(false)
+const showContinueDialog = ref(false)
 
 const PHOTO_FORMATS = ['avif', 'webp', 'jpg', 'png', 'jpeg']
 const photoFormatIndex = ref(0)
@@ -170,13 +198,16 @@ const skipQuestion = () => {
   gameStore.pauseTimer()
 
   setTimeout(() => {
-    if (currentPhotoIndex.value < selectedThemePhotos.value.length - 1) {
-      currentPhotoIndex.value += 1
-    }
+    const wasLast = currentPhotoIndex.value >= selectedThemePhotos.value.length - 1
+    if (!wasLast) currentPhotoIndex.value += 1
     showAnswer.value = false
     currentAnswer.value = ''
     borderFlash.value = 'idle'
-    gameStore.startTimer(gameStore.currentTimerPlayer || '')
+    if (wasLast) {
+      resolveByTimer()
+    } else {
+      gameStore.startTimer(gameStore.currentTimerPlayer || '')
+    }
   }, 800)
 }
 
@@ -190,15 +221,27 @@ const nextQuestion = () => {
   gameStore.pauseTimer()
 
   setTimeout(() => {
-    if (currentPhotoIndex.value < selectedThemePhotos.value.length - 1) {
-      currentPhotoIndex.value += 1
-    }
+    const wasLast = currentPhotoIndex.value >= selectedThemePhotos.value.length - 1
+    if (!wasLast) currentPhotoIndex.value += 1
     showAnswer.value = false
     currentAnswer.value = ''
     borderFlash.value = 'idle'
-    gameStore.switchTimer()
-    gameStore.startTimer(gameStore.currentTimerPlayer || '')
+    if (wasLast) {
+      resolveByTimer()
+    } else {
+      gameStore.switchTimer()
+      gameStore.startTimer(gameStore.currentTimerPlayer || '')
+    }
   }, 800)
+}
+
+function resolveByTimer() {
+  const battle = gameStore.currentBattle
+  if (!battle) return
+  const winnerName = gameStore.challengerTimer >= gameStore.defenderTimer
+    ? battle.player1Name
+    : battle.player2Name
+  gameStore.processBattleResult(winnerName)
 }
 
 const isNextDisabled = computed(
@@ -260,6 +303,16 @@ function endBattle() {
       isConsumed: t.isConsumed
     }))
   })
+  showContinueDialog.value = true
+}
+
+function confirmContinue() {
+  showContinueDialog.value = false
+  emit('battle-ended')
+}
+
+function confirmRestart() {
+  showContinueDialog.value = false
   gameStore.clearChallenger()
   emit('battle-ended')
 }
@@ -647,5 +700,83 @@ onUnmounted(() => stopBattleMusic())
   overflow: hidden;
   text-overflow: ellipsis;
   align-self: center;
+}
+
+/* Continue-challenge confirmation dialog */
+.continue-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.continue-dialog {
+  background: var(--bg-panel);
+  border: 1px solid var(--glow);
+  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  min-width: 280px;
+  box-shadow: 0 0 40px var(--glow-30);
+}
+
+.continue-question {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.continue-question strong {
+  color: var(--glow);
+}
+
+.continue-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.continue-btn {
+  padding: 0.65rem 1.4rem;
+  border-radius: 8px;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.continue-btn.primary {
+  background: var(--glow);
+  color: var(--bg-panel);
+  border-color: var(--glow);
+}
+
+.continue-btn.primary:hover {
+  background: var(--glow-bright, var(--glow));
+  border-color: var(--glow-bright, var(--glow));
+}
+
+.continue-btn.secondary {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--glow-30);
+}
+
+.continue-btn.secondary:hover {
+  color: var(--text);
+  border-color: var(--glow);
 }
 </style>
