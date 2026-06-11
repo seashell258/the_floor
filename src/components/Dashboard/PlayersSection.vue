@@ -60,7 +60,7 @@
           <label class="panel-label">選擇玩家</label>
           <select v-model="drawSelectedPlayerName" class="panel-select">
             <option v-for="p in gameStore.players" :key="p.name" :value="p.name">
-              {{ p.streakRewardCharges === 1 ? '⚡ ' : '' }}{{ p.name }}
+              {{ p.streakRewardCharges > 0 ? '⚡ ' : '' }}{{ p.name }}
             </option>
           </select>
           <p v-if="drawSelectedPlayerName && !selectedPlayerHasCharge" class="no-charge-warning">
@@ -161,7 +161,7 @@ const drawSelectedPlayerName = ref('')
 const rewardOptions: Array<'time' | 'shield'> = ['time', 'shield']
 
 const selectedPlayerHasCharge = computed(() =>
-  gameStore.players.find(p => p.name === drawSelectedPlayerName.value)?.streakRewardCharges === 1
+  gameStore.players.find(p => p.name === drawSelectedPlayerName.value)?.streakRewardCharges > 0
 )
 
 const selectableKeys = computed(() =>
