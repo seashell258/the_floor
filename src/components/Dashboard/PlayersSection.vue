@@ -3,11 +3,11 @@
 
     <!-- Challenger banner — sticky, appears once a challenger is drawn -->
     <div v-if="gameStore.currentChallenger" class="challenger-banner">
-      <span class="cb-eyebrow">CHALLENGER</span>
+      <span class="cb-eyebrow">挑戰者</span>
       <span class="cb-name">{{ gameStore.currentChallenger.challenger.name }}</span>
       <span class="cb-sub">選擇對手</span>
     </div>
-    <div v-else class="no-challenger-hint">尚未抽出挑戰者，請先至「抽挑戰者」頁抽籤</div>
+    <div v-else class="no-challenger-hint">尚無挑戰者</div>
 
     <div class="player-list">
       <div
@@ -17,7 +17,8 @@
         :class="{
           eliminated: player.eliminated,
           'streak-ready': player.streakRewardCharges > 0,
-          'battle-ready': !!gameStore.currentChallenger && !player.eliminated && !!topAvailableTheme(player)
+          'battle-ready': !!gameStore.currentChallenger && !player.eliminated && !!topAvailableTheme(player) && !isCurrentChallenger(player),
+          'is-self-challenger': isCurrentChallenger(player)
         }"
         @click="handleCardClick(player)"
       >
@@ -31,7 +32,12 @@
         </div>
 
         <!-- ── Primary battle zone ── -->
-        <div v-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme">
+        <div v-if="isCurrentChallenger(player)" class="self-zone">
+          <div class="self-bracket tl" /><div class="self-bracket tr" />
+          <div class="self-bracket bl" /><div class="self-bracket br" />
+          <span class="self-label">本輪挑戰者</span>
+        </div>
+        <div v-else-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme">
           <span class="primary-label">決鬥主題</span>
           <span class="primary-name">{{ topAvailableTheme(player)!.name }}</span>
           <Swords :size="14" class="primary-icon" />
@@ -202,6 +208,10 @@ const selectableKeys = computed(() =>
 
 function themeClass(theme: any, playerName: string): string {
   return getThemeClass(theme, playerName, selectableKeys.value)
+}
+
+function isCurrentChallenger(player: any): boolean {
+  return gameStore.currentChallenger?.challenger.name === player.name
 }
 
 // The first available (non-consumed, non-locked) theme — the primary battle target.
@@ -486,6 +496,45 @@ function handleStartDuel() {
 .primary-theme.exhausted {
   background: rgba(255, 255, 255, 0.03);
   border-color: transparent;
+}
+
+/* ─── Self-Challenger Lock ─── */
+
+.player-card.is-self-challenger {
+  border-color: rgba(255, 190, 40, 0.4);
+  cursor: default;
+}
+
+.self-zone {
+  position: relative;
+  min-height: 56px;
+  border: 1px solid rgba(255, 190, 40, 0.3);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 190, 40, 0.04);
+  padding: 0.75rem 1rem;
+}
+
+.self-bracket {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  opacity: 0.55;
+}
+
+.self-bracket.tl { top: 5px;    left: 5px;  border-top:    1.5px solid rgba(255, 190, 40, 0.8); border-left:   1.5px solid rgba(255, 190, 40, 0.8); }
+.self-bracket.tr { top: 5px;    right: 5px; border-top:    1.5px solid rgba(255, 190, 40, 0.8); border-right:  1.5px solid rgba(255, 190, 40, 0.8); }
+.self-bracket.bl { bottom: 5px; left: 5px;  border-bottom: 1.5px solid rgba(255, 190, 40, 0.8); border-left:   1.5px solid rgba(255, 190, 40, 0.8); }
+.self-bracket.br { bottom: 5px; right: 5px; border-bottom: 1.5px solid rgba(255, 190, 40, 0.8); border-right:  1.5px solid rgba(255, 190, 40, 0.8); }
+
+.self-label {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255, 190, 40, 0.75);
 }
 
 .primary-label {
