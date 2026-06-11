@@ -69,6 +69,8 @@ export interface Player {
   eliminated: boolean
   winStreak: number
   prop: 'time' | 'shield' | null
+  winsTowardNextReward: number
+  streakRewardCharges: number
 }
 
 interface VoteResult {
@@ -339,7 +341,9 @@ export const useGameStore = defineStore('game', () => {
       correct: 0,
       eliminated: false,
       winStreak: 0,
-      prop: null
+      prop: null,
+      winsTowardNextReward: 0,
+      streakRewardCharges: 0
     }
   }
 
@@ -511,11 +515,57 @@ export const useGameStore = defineStore('game', () => {
     voteResults: NonNullable<GameState['voteResults']>
     battleWinner: string | null
     battleStartedAt: number | null
+    playersSnapshot?: Array<{
+      name: string
+      eliminated: boolean
+      winStreak: number
+      prop: 'time' | 'shield' | null
+      themeItems: Array<{ name: string; isConsumed: boolean; isActivated: boolean }>
+    }> | null
+    hostThemesSnapshot?: Array<{
+      name: string
+      isConsumed: boolean
+    }> | null
   }) {
     state.value.currentBattle = incoming.currentBattle
     state.value.voteResults = incoming.voteResults
     state.value.battleWinner = incoming.battleWinner
     state.value.battleStartedAt = incoming.battleStartedAt ?? null
+
+    if (incoming.playersSnapshot) {
+      for (const snap of incoming.playersSnapshot) {
+        const player = state.value.players.find(p => p.name === snap.name)
+        if (!player) continue
+        player.eliminated = snap.eliminated
+        player.winStreak = snap.winStreak
+        player.prop = snap.prop
+        // Sync theme flags by name; preserve existing photos/answers.
+        // If a theme is new (winner gained loser's theme), push it with empty media —
+        // vote page only renders theme names, so empty photos/answers are fine there.
+        for (const snapTheme of snap.themeItems) {
+          const existing = player.themeStack.items.find(t => t.name === snapTheme.name)
+          if (existing) {
+            existing.isConsumed = snapTheme.isConsumed
+            existing.isActivated = snapTheme.isActivated
+          } else {
+            player.themeStack.items.push({
+              name: snapTheme.name,
+              photos: [],
+              answers: [],
+              isConsumed: snapTheme.isConsumed,
+              isActivated: snapTheme.isActivated
+            })
+          }
+        }
+      }
+    }
+
+    if (incoming.hostThemesSnapshot) {
+      for (const snap of incoming.hostThemesSnapshot) {
+        const theme = state.value.hostThemes.find(t => t.name === snap.name)
+        if (theme) theme.isConsumed = snap.isConsumed
+      }
+    }
   }
 
   return {
