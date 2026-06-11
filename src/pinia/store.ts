@@ -324,6 +324,11 @@ export const useGameStore = defineStore('game', () => {
     if (player) player.prop = null
   }
 
+  function consumeStreakRewardCharge(playerName: string): void {
+    const player = state.value.players.find(p => p.name === playerName)
+    if (player) player.streakRewardCharges = 0
+  }
+
   function applyTimeProp(playerName: string): void {
     state.value.timePropBonus[playerName] = (state.value.timePropBonus[playerName] ?? 0) + 3
     consumeProp(playerName)
@@ -453,7 +458,18 @@ export const useGameStore = defineStore('game', () => {
     if (loser.themeStack.activeCount() === 0) loser.eliminated = true
 
     winner.winStreak += 1
+    if (winner.streakRewardCharges === 1) winner.streakRewardCharges = 0
+    if (winner.prop === null) {
+      winner.winsTowardNextReward += 1
+      if (winner.winsTowardNextReward >= 2) {
+        winner.streakRewardCharges = 1
+        winner.winsTowardNextReward = 0
+      }
+    }
+
     loser.winStreak = 0
+    loser.winsTowardNextReward = 0
+    loser.streakRewardCharges = 0
     state.value.battleWinner = winnerName
   }
 
@@ -620,6 +636,7 @@ export const useGameStore = defineStore('game', () => {
     activateRevivalTheme,
     consumeProp,
     applyTimeProp,
+    consumeStreakRewardCharge,
     applyVoteState
   }
 })
