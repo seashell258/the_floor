@@ -13,7 +13,9 @@ let voteState = {
   currentBattle: null,
   voteResults: { player1: '', player2: '', votes1: 0, votes2: 0, voters1: [], voters2: [] },
   battleWinner: null,
-  battleStartedAt: null
+  battleStartedAt: null,
+  playersSnapshot: null,
+  hostThemesSnapshot: null
 }
 
 io.on('connection', (socket) => {
