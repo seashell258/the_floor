@@ -1,45 +1,83 @@
 <template>
   <section class="section">
-    <h3>玩家狀態</h3>
+
+    <!-- Challenger banner — sticky, appears once a challenger is drawn -->
+    <div v-if="gameStore.currentChallenger" class="challenger-banner">
+      <span class="cb-eyebrow">CHALLENGER</span>
+      <span class="cb-name">{{ gameStore.currentChallenger.challenger.name }}</span>
+      <span class="cb-sub">選擇對手</span>
+    </div>
+    <div v-else class="no-challenger-hint">尚未抽出挑戰者，請先至「抽挑戰者」頁抽籤</div>
+
     <div class="player-list">
-      <div v-for="player in players" :key="player.name" class="player-card" :class="{ eliminated: player.eliminated, 'streak-ready': player.streakRewardCharges > 0 }">
+      <div
+        v-for="player in players"
+        :key="player.name"
+        class="player-card"
+        :class="{
+          eliminated: player.eliminated,
+          'streak-ready': player.streakRewardCharges > 0,
+          'battle-ready': !!gameStore.currentChallenger && !player.eliminated && !!topAvailableTheme(player)
+        }"
+        @click="handleCardClick(player)"
+      >
+        <!-- ── Header ── -->
         <div class="player-card-header">
-          <div>
-            <h4>{{ player.name }}</h4>
-            <p class="player-meta">剩餘命數：{{ player.themeStack.items.filter((t: any) => !t.isConsumed).length }}</p>
-          </div>
+          <h4>{{ player.name }}</h4>
           <div class="player-badge">
             <span>連勝</span>
             <strong>{{ player.winStreak }}</strong>
           </div>
         </div>
 
-        <div class="theme-list">
+        <!-- ── Primary battle zone ── -->
+        <div v-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme">
+          <span class="primary-label">決鬥主題</span>
+          <span class="primary-name">{{ topAvailableTheme(player)!.name }}</span>
+          <Swords :size="14" class="primary-icon" />
+        </div>
+        <div v-else-if="!player.eliminated" class="primary-theme exhausted">
+          <span class="primary-name muted">所有主題已消耗</span>
+        </div>
+
+        <!-- ── Secondary themes ── -->
+        <div v-if="secondaryThemes(player).length > 0" class="secondary-themes" @click.stop>
+          <span class="secondary-label">其他</span>
           <div
-            v-for="theme in [...player.themeStack.items].reverse()"
+            v-for="theme in secondaryThemes(player)"
             :key="theme.name"
             class="theme-pill"
             :class="themeClass(theme, player.name)"
-            @click="handleThemeClick(player, theme)">
+            @click.stop="handleThemeClick(player, theme)"
+          >
             <span class="theme-name">{{ theme.name }}</span>
             <button
               v-if="!theme.isActivated"
               class="revival-btn"
               @click.stop="openRevivalConfirm(player.name)"
               title="啟用復活題"
-            ><Unlock :size="12" /></button>
+            ><Unlock :size="11" /></button>
           </div>
         </div>
 
-        <div v-if="player.prop" class="prop-area">
+        <!-- ── Prop ── -->
+        <div v-if="player.prop" class="prop-area" @click.stop>
           <button
             class="prop-btn"
             @click="handlePropClick(player)"
             :title="player.prop === 'time' ? '使用：時間+3秒' : '使用：盾牌'"
-          ><Clock v-if="player.prop === 'time'" :size="20" /><Shield v-else :size="20" /></button>
+          >
+            <Clock v-if="player.prop === 'time'" :size="20" />
+            <Shield v-else :size="20" />
+          </button>
         </div>
-        <div class="status-indicator" :class="{ active: !player.eliminated }">
-          {{ player.eliminated ? '已淘汰' : '存活' }}
+
+        <!-- ── Footer ── -->
+        <div class="player-footer">
+          <span class="lives-count">命數 {{ player.themeStack.items.filter((t: any) => !t.isConsumed).length }}</span>
+          <div class="status-indicator" :class="{ active: !player.eliminated }">
+            {{ player.eliminated ? '已淘汰' : '存活' }}
+          </div>
         </div>
       </div>
     </div>
@@ -82,15 +120,13 @@
       <Swords :size="15" /><span>挑戰主持人</span>
     </div>
 
-    <!-- 展開面板 -->
+    <!-- 挑戰主持人面板 -->
     <div v-else class="host-panel">
       <div class="host-panel-header">
         <span class="host-panel-title">挑戰主持人</span>
         <button class="close-btn" @click="isPanelOpen = false"><X :size="15" /></button>
       </div>
-
       <div class="host-panel-body">
-        <!-- 1. 指定挑戰者 -->
         <div class="panel-row">
           <label class="panel-label">挑戰者</label>
           <select v-model="selectedChallengerName" class="panel-select">
@@ -99,8 +135,6 @@
             </option>
           </select>
         </div>
-
-        <!-- 2. 主持人當前主題 -->
         <div class="panel-row">
           <label class="panel-label">主持人主題</label>
           <select v-model="selectedHostThemeKey" @change="onHostThemeChange" class="panel-select">
@@ -113,8 +147,6 @@
             目前：{{ gameStore.state.hostCurrentTheme.name }}（{{ gameStore.state.hostCurrentTheme.photos.length }} 張）
           </span>
         </div>
-
-        <!-- 3. 開始決鬥 -->
         <button
           class="duel-btn"
           :disabled="!selectedChallengerName || !gameStore.state.hostCurrentTheme"
@@ -125,7 +157,7 @@
       </div>
     </div>
 
-    <!-- Revival activation confirm modal -->
+    <!-- Revival confirm modal -->
     <div v-if="revivalConfirmPlayer" class="modal-overlay" @click.self="revivalConfirmPlayer = null">
       <div class="modal-content">
         <h4>啟用復活題？</h4>
@@ -172,12 +204,33 @@ function themeClass(theme: any, playerName: string): string {
   return getThemeClass(theme, playerName, selectableKeys.value)
 }
 
+// The first available (non-consumed, non-locked) theme — the primary battle target.
+function topAvailableTheme(player: any): any | null {
+  const reversed = [...player.themeStack.items].reverse()
+  return reversed.find((t: any) => themeClass(t, player.name) === '') ?? null
+}
+
+// Everything except the primary theme, for the secondary row.
+function secondaryThemes(player: any): any[] {
+  const top = topAvailableTheme(player)
+  return [...player.themeStack.items].reverse().filter((t: any) => t !== top)
+}
+
+// Tap the whole card → start battle with top available theme.
+function handleCardClick(player: any): void {
+  if (player.eliminated) return
+  const top = topAvailableTheme(player)
+  if (top) {
+    props.onThemeClick(player, top)
+  }
+}
+
+// Individual theme pill click (secondary themes or override).
 function handleThemeClick(player: any, theme: any): void {
   const cls = themeClass(theme, player.name)
   if (cls === 'consumed' || cls === 'revival-locked' || cls === 'temp-locked') return
   props.onThemeClick(player, theme)
 }
-
 
 function handlePropClick(player: any): void {
   if (!player.prop) return
@@ -247,13 +300,66 @@ function handleStartDuel() {
   box-shadow: 0 0 20px var(--glow-10);
 }
 
-.section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--text);
-  font-family: 'Chakra Petch', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+/* ─── Challenger Banner ─── */
+
+.challenger-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1.25rem;
+  background: rgba(25, 233, 255, 0.07);
+  border: 1px solid var(--glow);
+  border-radius: 8px;
+  box-shadow: 0 0 16px var(--glow-10);
+  animation: banner-in 0.3s ease both;
 }
+
+@keyframes banner-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cb-eyebrow {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  color: var(--glow);
+  opacity: 0.6;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.cb-name {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--glow);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cb-sub {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.no-challenger-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-family: 'Chakra Petch', sans-serif;
+  text-align: center;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+/* ─── Player Grid ─── */
 
 .player-list {
   display: grid;
@@ -261,158 +367,255 @@ function handleStartDuel() {
   gap: 1rem;
 }
 
-.player-card {
-  padding: 1rem;
-  background-color: var(--bg-surface);
-  border-radius: 14px;
-  border: 1px solid var(--glow-30);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+@media (min-width: 768px) {
+  .player-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.player-card:hover {
-  transform: translateY(-2px);
+@media (min-width: 1024px) {
+  .player-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ─── Player Card ─── */
+
+.player-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  background: var(--bg-surface);
+  border-radius: 14px;
+  border: 1px solid var(--glow-30);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+/* Invite to tap when a challenger is ready */
+.player-card.battle-ready {
+  cursor: pointer;
+  border-color: rgba(25, 233, 255, 0.55);
+}
+
+.player-card.battle-ready:hover {
   border-color: var(--glow);
+  box-shadow: 0 0 18px var(--glow-10);
 }
 
 .player-card.eliminated {
-  opacity: 0.5;
+  opacity: 0.45;
+  cursor: default;
   border-color: var(--danger);
 }
 
 .player-card.streak-ready {
   border-color: var(--warn);
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
   animation: streak-pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes streak-pulse {
   0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.15); }
-  50% { box-shadow: 0 0 28px rgba(245, 158, 11, 0.5); }
+  50%       { box-shadow: 0 0 28px rgba(245, 158, 11, 0.45); }
 }
+
+/* ─── Card Header ─── */
 
 .player-card-header {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .player-card-header h4 {
-  margin: 0 0 0.35rem 0;
-  color: var(--text);
-  font-size: 1.15rem;
-  font-family: 'Chakra Petch', sans-serif;
-}
-
-.player-meta {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  font-family: 'Chakra Petch', sans-serif;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .player-badge {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
-  padding: 0.55rem 0.85rem;
-  background: rgba(245, 158, 11, 0.15);
+  padding: 0.4rem 0.7rem;
+  background: rgba(245, 158, 11, 0.12);
   border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .player-badge span {
   color: var(--warn);
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   font-family: 'Chakra Petch', sans-serif;
+  line-height: 1;
 }
 
 .player-badge strong {
   color: var(--warn);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-family: 'Chakra Petch', sans-serif;
+  line-height: 1.2;
 }
 
-.theme-list {
-  display: grid;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+/* ─── Primary Battle Zone ─── */
+
+.primary-theme {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 56px;
+  padding: 0.75rem 1rem;
+  background: rgba(25, 233, 255, 0.06);
+  border: 1px solid var(--glow-30);
+  border-radius: 10px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.battle-ready .primary-theme {
+  background: rgba(25, 233, 255, 0.10);
+  border-color: var(--glow);
+}
+
+.battle-ready:hover .primary-theme {
+  background: rgba(25, 233, 255, 0.15);
+}
+
+.primary-theme.exhausted {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: transparent;
+}
+
+.primary-label {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--glow);
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.primary-name {
+  flex: 1;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.primary-name.muted {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.primary-icon {
+  color: var(--glow);
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.battle-ready:hover .primary-icon {
+  opacity: 0.7;
+}
+
+/* ─── Secondary Themes ─── */
+
+.secondary-themes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.secondary-label {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  opacity: 0.5;
+  flex-shrink: 0;
+  text-transform: uppercase;
 }
 
 .theme-pill {
-  padding: 0.75rem 0.9rem;
+  padding: 0.35rem 0.7rem;
   border-radius: 999px;
   background: var(--glow-10);
   color: var(--glow);
   border: 1px solid var(--glow-30);
-  font-weight: 700;
-  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition: background 0.15s;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
 }
 
 .theme-pill:hover {
-  transform: translateY(-1px);
   background: var(--glow-30);
 }
 
 .theme-pill.consumed {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
   border-color: transparent;
   cursor: default;
+  text-decoration: line-through;
+  opacity: 0.5;
 }
 
 .theme-pill.consumed:hover {
-  transform: none;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.theme-name {
-  flex: 1;
-  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .theme-pill.temp-locked {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(245, 158, 11, 0.08);
   color: var(--warn);
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(245, 158, 11, 0.25);
   cursor: not-allowed;
-  opacity: 0.75;
+  opacity: 0.6;
 }
 
 .theme-pill.temp-locked:hover {
-  transform: none;
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(245, 158, 11, 0.08);
 }
 
 .theme-pill.revival-locked {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
   border-color: transparent;
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .theme-pill.revival-locked:hover {
-  transform: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.theme-name {
+  line-height: 1;
 }
 
 .revival-btn {
   background: none;
   border: 1px solid var(--glow-30);
   border-radius: 4px;
-  font-size: 0.75rem;
   cursor: pointer;
-  padding: 0.1rem 0.3rem;
-  flex-shrink: 0;
+  padding: 0.1rem 0.25rem;
   line-height: 1;
   color: var(--text-muted);
   transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
 }
 
 .revival-btn:hover {
@@ -420,21 +623,24 @@ function handleStartDuel() {
   color: var(--glow);
 }
 
+/* ─── Prop ─── */
+
 .prop-area {
-  margin-bottom: 0.75rem;
   display: flex;
   gap: 0.5rem;
 }
 
 .prop-btn {
-  font-size: 1.5rem;
   background: none;
   border: 2px solid var(--glow-30);
   border-radius: 8px;
   padding: 0.25rem 0.6rem;
   cursor: pointer;
+  color: var(--glow);
   transition: border-color 0.15s, background 0.15s;
   line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .prop-btn:hover {
@@ -442,80 +648,28 @@ function handleStartDuel() {
   background: var(--glow-10);
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+/* ─── Footer ─── */
+
+.player-footer {
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 200;
+  justify-content: space-between;
+  margin-top: 0.15rem;
 }
 
-.modal-content {
-  background: var(--bg-panel);
-  padding: 1.5rem;
-  border-radius: 12px;
-  border: 1px solid var(--glow-30);
-  max-width: 360px;
-  width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
-.modal-content h4 {
-  margin: 0 0 0.75rem 0;
-  color: var(--text);
-  font-family: 'Chakra Petch', sans-serif;
-}
-
-.modal-content p {
-  margin: 0 0 1.25rem 0;
+.lives-count {
+  font-size: 0.8rem;
   color: var(--text-muted);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.cancel-btn {
-  padding: 0.5rem 1rem;
-  background: var(--bg-surface);
-  color: var(--text-muted);
-  border: 1px solid rgba(25, 233, 255, 0.2);
-  border-radius: 6px;
-  cursor: pointer;
   font-family: 'Chakra Petch', sans-serif;
-  transition: color 0.15s;
-}
-
-.cancel-btn:hover {
-  color: var(--text);
-}
-
-.confirm-btn {
-  padding: 0.5rem 1rem;
-  background: var(--glow);
-  color: var(--bg-panel);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'Chakra Petch', sans-serif;
-  font-weight: 700;
-}
-
-.confirm-btn:hover {
-  background: var(--glow-bright);
 }
 
 .status-indicator {
   display: inline-block;
-  padding: 0.35rem 0.7rem;
+  padding: 0.25rem 0.6rem;
   background: rgba(255, 255, 255, 0.05);
   color: var(--danger);
   border-radius: 5px;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   font-family: 'Chakra Petch', sans-serif;
 }
@@ -525,6 +679,8 @@ function handleStartDuel() {
   color: var(--glow);
   border: 1px solid var(--glow-30);
 }
+
+/* ─── FABs & Panels (unchanged) ─── */
 
 .draw-fab {
   position: fixed;
@@ -651,10 +807,11 @@ function handleStartDuel() {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 1rem;
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   transition: color 0.15s;
+  display: flex;
+  align-items: center;
 }
 
 .close-btn:hover {
@@ -724,15 +881,72 @@ function handleStartDuel() {
   cursor: not-allowed;
 }
 
-@media (min-width: 768px) {
-  .player-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* ─── Revival modal ─── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
 }
 
-@media (min-width: 1024px) {
-  .player-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+.modal-content {
+  background: var(--bg-panel);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--glow-30);
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h4 {
+  margin: 0 0 0.75rem 0;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.modal-content p {
+  margin: 0 0 1.25rem 0;
+  color: var(--text-muted);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.cancel-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid rgba(25, 233, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  transition: color 0.15s;
+}
+
+.cancel-btn:hover {
+  color: var(--text);
+}
+
+.confirm-btn {
+  padding: 0.5rem 1rem;
+  background: var(--glow);
+  color: var(--bg-panel);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+}
+
+.confirm-btn:hover {
+  background: var(--glow-bright);
 }
 </style>
