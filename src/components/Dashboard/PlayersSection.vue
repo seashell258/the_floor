@@ -165,6 +165,47 @@
       </div>
     </div>
 
+    <!-- VS Screen + Countdown -->
+    <Teleport to="body">
+      <div v-if="vsPhase" class="vs-overlay" :class="{ 'countdown-mode': vsPhase === 'countdown' }" @click="handleOverlayClick">
+        <div class="vs-scanlines" />
+
+        <Transition name="vs-fade">
+          <div v-if="vsPhase === 'vs'" class="vs-inner">
+            <div class="vs-progress" />
+
+            <div class="vs-stage">
+              <div class="vs-side vs-left">
+                <span class="vs-role">挑戰者</span>
+                <span class="vs-name vs-name-left">{{ gameStore.currentChallenger?.challenger.name }}</span>
+              </div>
+
+              <div class="vs-center-col">
+                <span class="vs-mark">VS</span>
+                <div class="vs-theme-info">
+                  <span class="vs-theme-eyebrow">決鬥主題</span>
+                  <span class="vs-theme-name">{{ pendingBattleTheme?.name }}</span>
+                </div>
+              </div>
+
+              <div class="vs-side vs-right">
+                <span class="vs-role">應戰</span>
+                <span class="vs-name vs-name-right">{{ pendingBattlePlayer?.name }}</span>
+              </div>
+            </div>
+
+            <span class="vs-tap-hint">TAP TO BEGIN</span>
+          </div>
+        </Transition>
+
+        <Transition name="vs-fade">
+          <div v-if="vsPhase === 'countdown'" class="countdown-wrap">
+            <span class="countdown-num" :key="countdownNum">{{ countdownNum }}</span>
+          </div>
+        </Transition>
+      </div>
+    </Teleport>
+
     <!-- Revival confirm modal -->
     <div v-if="revivalConfirmPlayer" class="modal-overlay" @click.self="revivalConfirmPlayer = null">
       <div class="modal-content">
@@ -180,7 +221,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useGameStore } from '../../pinia/store'
 import { getThemeClass } from '../../utils/themeUtils'
 import { Swords, Gift, Unlock, Clock, Shield, X } from 'lucide-vue-next'
@@ -228,20 +269,68 @@ function secondaryThemes(player: any): any[] {
   return [...player.themeStack.items].reverse().filter((t: any) => t !== top)
 }
 
-// Tap the whole card → start battle with top available theme.
+// ─── VS Screen + Countdown ───
+
+const pendingBattlePlayer = ref<any>(null)
+const pendingBattleTheme  = ref<any>(null)
+const vsPhase = ref<'vs' | 'countdown' | null>(null)
+const countdownNum = ref(3)
+let vsAutoTimer: number | null = null
+let countdownInterval: ReturnType<typeof setInterval> | null = null
+
+onUnmounted(() => {
+  if (vsAutoTimer) clearTimeout(vsAutoTimer)
+  if (countdownInterval) clearInterval(countdownInterval)
+})
+
+function openVsScreen(player: any, theme: any) {
+  pendingBattlePlayer.value = player
+  pendingBattleTheme.value  = theme
+  vsPhase.value = 'vs'
+  vsAutoTimer = window.setTimeout(startCountdown, 4500)
+}
+
+function handleOverlayClick() {
+  if (vsPhase.value === 'vs') startCountdown()
+}
+
+function startCountdown() {
+  if (vsAutoTimer) { clearTimeout(vsAutoTimer); vsAutoTimer = null }
+  vsPhase.value = 'countdown'
+  countdownNum.value = 3
+  let n = 3
+  countdownInterval = setInterval(() => {
+    n--
+    if (n <= 0) {
+      clearInterval(countdownInterval!); countdownInterval = null
+      executeBattle()
+    } else {
+      countdownNum.value = n
+    }
+  }, 1000)
+}
+
+function executeBattle() {
+  const player = pendingBattlePlayer.value
+  const theme  = pendingBattleTheme.value
+  pendingBattlePlayer.value = null
+  pendingBattleTheme.value  = null
+  vsPhase.value = null
+  if (player && theme) props.onThemeClick(player, theme)
+}
+
+// Tap the whole card → VS screen with top available theme.
 function handleCardClick(player: any): void {
   if (player.eliminated) return
   const top = topAvailableTheme(player)
-  if (top) {
-    props.onThemeClick(player, top)
-  }
+  if (top) openVsScreen(player, top)
 }
 
 // Individual theme pill click (secondary themes or override).
 function handleThemeClick(player: any, theme: any): void {
   const cls = themeClass(theme, player.name)
   if (cls === 'consumed' || cls === 'revival-locked' || cls === 'temp-locked') return
-  props.onThemeClick(player, theme)
+  openVsScreen(player, theme)
 }
 
 function handlePropClick(player: any): void {
@@ -997,5 +1086,226 @@ function handleStartDuel() {
 
 .confirm-btn:hover {
   background: var(--glow-bright);
+}
+
+/* ─── VS Screen ─── */
+
+.vs-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 4, 18, 0.97);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.vs-overlay.countdown-mode {
+  cursor: default;
+}
+
+.vs-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent, transparent 3px,
+    rgba(0, 0, 0, 0.18) 3px, rgba(0, 0, 0, 0.18) 4px
+  );
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+/* Phase transitions */
+.vs-fade-enter-active { transition: opacity 0.2s ease; }
+.vs-fade-leave-active { transition: opacity 0.12s ease; }
+.vs-fade-enter-from,
+.vs-fade-leave-to     { opacity: 0; }
+
+/* VS inner layout */
+.vs-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.vs-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--glow);
+  opacity: 0.45;
+  transform-origin: left center;
+  animation: vs-drain 4.5s linear forwards;
+}
+
+@keyframes vs-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+.vs-stage {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 2.5rem;
+  width: 100%;
+  max-width: 880px;
+  padding: 0 3.5rem;
+}
+
+.vs-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vs-left {
+  align-items: flex-end;
+  animation: vs-from-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vs-right {
+  align-items: flex-start;
+  animation: vs-from-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+}
+
+@keyframes vs-from-left {
+  from { opacity: 0; transform: translateX(-80px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes vs-from-right {
+  from { opacity: 0; transform: translateX(80px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.vs-role {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.vs-left .vs-role { color: var(--glow); }
+
+.vs-name {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(2.4rem, 5.5vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.1;
+  word-break: break-all;
+}
+
+.vs-name-left {
+  color: var(--glow);
+  text-shadow: 0 0 40px rgba(25, 233, 255, 0.45);
+  text-align: right;
+}
+
+.vs-name-right {
+  color: #ffffff;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.18);
+  text-align: left;
+}
+
+.vs-center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.vs-mark {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.22);
+  letter-spacing: 0.06em;
+  animation: vs-punch 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+}
+
+@keyframes vs-punch {
+  from { opacity: 0; transform: scale(2.2); filter: blur(6px); }
+  to   { opacity: 1; transform: scale(1);   filter: blur(0); }
+}
+
+.vs-theme-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  animation: vs-rise 0.4s ease 0.52s both;
+}
+
+@keyframes vs-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.vs-theme-eyebrow {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.vs-theme-name {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.vs-tap-hint {
+  position: absolute;
+  bottom: 2.5rem;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--glow);
+  opacity: 0;
+  animation: vs-hint-fade 0.3s ease 1.1s forwards;
+}
+
+@keyframes vs-hint-fade {
+  to { opacity: 0.38; }
+}
+
+/* ─── Countdown ─── */
+
+.countdown-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-num {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(10rem, 24vw, 18rem);
+  font-weight: 900;
+  color: #ffffff;
+  -webkit-text-stroke: 2px rgba(25, 233, 255, 0.3);
+  text-shadow: 0 0 80px rgba(25, 233, 255, 0.28);
+  line-height: 1;
+  animation: count-slam 0.95s ease forwards;
+}
+
+@keyframes count-slam {
+  0%   { transform: scale(2.4); opacity: 0; filter: blur(14px); }
+  22%  { transform: scale(1);   opacity: 1; filter: blur(0); }
+  68%  { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(0.72); opacity: 0; filter: blur(4px); }
 }
 </style>
