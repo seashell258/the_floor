@@ -135,6 +135,7 @@
     <!-- Host themes floating button — fixed bottom-left, visible on both tabs -->
     <button
       v-if="gameStore.hostThemes.length > 0"
+      type="button"
       class="host-themes-btn"
       @click="hostPanelOpen = !hostPanelOpen"
       :title="hostPanelOpen ? '關閉主持人主題' : '主持人主題'"
