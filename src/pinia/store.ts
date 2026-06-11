@@ -458,8 +458,8 @@ export const useGameStore = defineStore('game', () => {
     if (loser.themeStack.activeCount() === 0) loser.eliminated = true
 
     winner.winStreak += 1
-    if (winner.streakRewardCharges === 1) winner.streakRewardCharges = 0
     if (winner.prop === null) {
+      if (winner.streakRewardCharges === 1) winner.streakRewardCharges = 0
       winner.winsTowardNextReward += 1
       if (winner.winsTowardNextReward >= 2) {
         winner.streakRewardCharges = 1
