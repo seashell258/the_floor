@@ -24,6 +24,18 @@
       </div>
     </div>
 
+    <div v-if="showDrawConfirm" class="modal-overlay" @click="cancelDraw">
+      <div class="modal-content confirm-modal" @click.stop>
+        <div class="confirm-icon">⚡</div>
+        <h4>確認抽籤</h4>
+        <p class="confirm-text">是否要開始抽籤？</p>
+        <div class="confirm-actions">
+          <button class="confirm-btn confirm-yes" @click="confirmDraw">確認</button>
+          <button class="confirm-btn confirm-no" @click="cancelDraw">取消</button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="showRemoveDialog" class="modal-overlay" @click="handleHideRemoveDialog">
       <div class="modal-content" @click.stop>
         <h4>移除陣亡者</h4>
@@ -52,6 +64,7 @@ const props = defineProps<{
 
 const gameStore = useGameStore()
 const showRemoveDialog = ref(false)
+const showDrawConfirm = ref(false)
 
 onMounted(() => {
   if (!gameStore.wheelInitialized) gameStore.initWheel()
@@ -59,9 +72,17 @@ onMounted(() => {
 
 function handleDrawFromWheel() {
   if (gameStore.wheelPlayers.length === 0) return
-  if (!confirm('是否要開始抽籤？')) return
+  showDrawConfirm.value = true
+}
+
+function confirmDraw() {
+  showDrawConfirm.value = false
   const selected = gameStore.drawFromWheel()
   if (selected) gameStore.setChallenger(selected)
+}
+
+function cancelDraw() {
+  showDrawConfirm.value = false
 }
 
 function handleResetWheel() {
@@ -280,5 +301,72 @@ function handleRemovePlayer(playerName: string) {
 
 .cancel-btn:hover {
   color: var(--text);
+}
+
+.confirm-modal {
+  text-align: center;
+  max-width: 320px;
+  border-color: var(--glow);
+  box-shadow: 0 0 30px var(--glow-30), 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.confirm-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  filter: drop-shadow(0 0 8px var(--glow));
+}
+
+.confirm-modal h4 {
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--glow);
+  margin-bottom: 0.5rem;
+}
+
+.confirm-text {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.confirm-btn {
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.confirm-yes {
+  background: var(--glow);
+  color: var(--bg-panel);
+  border: none;
+}
+
+.confirm-yes:hover {
+  background: var(--glow-bright);
+  box-shadow: 0 0 12px var(--glow-30);
+}
+
+.confirm-no {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid rgba(25, 233, 255, 0.2);
+}
+
+.confirm-no:hover {
+  color: var(--text);
+  border-color: rgba(25, 233, 255, 0.4);
 }
 </style>

@@ -132,44 +132,62 @@
       </section>
     </div>
 
-    <!-- Host themes floating button — fixed bottom-left, visible on both tabs -->
+    <!-- ⚔ Host themes trigger — fixed bottom-left, visible on both tabs -->
     <button
       v-if="gameStore.hostThemes.length > 0"
       type="button"
       class="host-themes-btn"
+      :class="{ 'is-open': hostPanelOpen }"
       @click="hostPanelOpen = !hostPanelOpen"
-      :title="hostPanelOpen ? '關閉主持人主題' : '主持人主題'"
     >
-      <Shield :size="20" />
+      <Swords :size="14" class="host-btn-sword" />
+      <span class="host-btn-label">主持人</span>
+      <span class="host-btn-chip">
+        <span class="chip-avail">{{ hostAvailableCount }}</span><span class="chip-sep">/</span><span class="chip-total">{{ gameStore.hostThemes.length }}</span>
+      </span>
     </button>
 
-    <!-- HOST THEMES PANEL
-         Mobile-first bottom sheet: slides up from bottom on open, fixed overlay
-         Button: fixed bottom-left, small icon button (Shield icon)
-         Panel: full width, rounded top corners, max-height ~50vh, scrollable
-         Theme pills: reuse .theme-pill and .theme-pill.consumed styles
-         Background overlay: semi-transparent, tap to close
-         Panel visible on both tabs (投票 and 玩家狀態) -->
+    <!-- HOST THEMES BOTTOM SHEET
+         Mobile-first. Slides up from bottom with CSS keyframe animation.
+         Overlay fades via Vue Transition (name="host-overlay").
+         Each row: index number + theme name + status badge.
+         Available themes: cyan glow badge "可挑戰". Consumed: 38% opacity + strikethrough + muted badge. -->
     <Teleport to="body">
-      <div
-        v-if="hostPanelOpen"
-        class="host-panel-overlay"
-        @click.self="hostPanelOpen = false"
-      >
-        <div class="host-panel">
-          <h4 class="host-panel-title">主持人主題</h4>
-          <div class="host-theme-list">
-            <div
-              v-for="theme in gameStore.hostThemes"
-              :key="theme.name"
-              class="theme-pill"
-              :class="{ consumed: theme.isConsumed }"
-            >
-              {{ theme.name }}
+      <Transition name="host-overlay">
+        <div
+          v-if="hostPanelOpen"
+          class="host-panel-overlay"
+          @click.self="hostPanelOpen = false"
+        >
+          <div class="host-panel">
+            <div class="host-panel-handle"></div>
+            <div class="host-panel-header">
+              <div class="host-panel-header-title">
+                <Swords :size="13" />
+                <span>主持人主題</span>
+              </div>
+              <div class="host-panel-header-stat">
+                <span class="stat-avail">{{ hostAvailableCount }}</span>
+                <span class="stat-sep"> / </span>
+                <span class="stat-total">{{ gameStore.hostThemes.length }}</span>
+                <span class="stat-unit"> 可用</span>
+              </div>
+            </div>
+            <div class="host-theme-rows">
+              <div
+                v-for="(theme, idx) in gameStore.hostThemes"
+                :key="theme.name"
+                class="host-theme-row"
+                :class="{ consumed: theme.isConsumed }"
+              >
+                <span class="row-index">{{ String(idx + 1).padStart(2, '0') }}</span>
+                <span class="row-name">{{ theme.name }}</span>
+                <span class="row-status">{{ theme.isConsumed ? '已消耗' : '可挑戰' }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
   </div>
 </template>
@@ -179,11 +197,12 @@ import { computed, ref, watch, onUnmounted } from 'vue'
 import { useGameStore } from '../pinia/store'
 import { getThemeClass } from '../utils/themeUtils'
 import { socket } from '../socket'
-import { Check, Clock, Shield } from 'lucide-vue-next'
+import { Check, Clock, Shield, Swords } from 'lucide-vue-next'
 
 const gameStore = useGameStore()
 const activeTab = ref<'vote' | 'status'>('vote')
 const hostPanelOpen = ref(false)
+const hostAvailableCount = computed(() => gameStore.hostThemes.filter(t => !t.isConsumed).length)
 
 const VOTE_WINDOW_MS = 7000
 const now = ref(Date.now())
@@ -713,64 +732,245 @@ function getVotePercentage(playerNum: number): number {
   }
 }
 
-/* Host themes floating button + bottom sheet panel */
+/* ── Host themes floating trigger ── */
 .host-themes-btn {
   position: fixed;
-  bottom: 1.5rem;
-  left: 1.5rem;
+  bottom: 1.25rem;
+  left: 1rem;
   z-index: 100;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--bg-panel);
-  border: 1px solid var(--glow-30);
-  color: var(--glow);
-  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  gap: 0.45rem;
+  padding: 0.6rem 0.85rem 0.6rem 0.75rem;
+  background: rgba(0, 13, 43, 0.88);
+  border: 1px solid rgba(25, 233, 255, 0.28);
+  border-radius: 999px;
+  color: rgba(226, 244, 248, 0.72);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.host-themes-btn:hover {
-  border-color: var(--glow);
-  box-shadow: 0 2px 18px var(--glow-30);
+.host-btn-sword {
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
 }
 
+.host-btn-label {
+  letter-spacing: 0.06em;
+}
+
+.host-btn-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 0.05rem;
+  padding: 0.15rem 0.45rem;
+  background: rgba(25, 233, 255, 0.1);
+  border: 1px solid rgba(25, 233, 255, 0.2);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.chip-avail {
+  color: var(--glow);
+  font-weight: 700;
+}
+
+.chip-sep,
+.chip-total {
+  color: var(--text-muted);
+}
+
+.host-themes-btn:hover,
+.host-themes-btn.is-open {
+  border-color: rgba(25, 233, 255, 0.55);
+  color: var(--text);
+  background: rgba(25, 233, 255, 0.07);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4), 0 0 16px rgba(25, 233, 255, 0.12);
+}
+
+.host-themes-btn:hover .host-btn-sword,
+.host-themes-btn.is-open .host-btn-sword {
+  opacity: 1;
+}
+
+/* ── Overlay fade transition ── */
+.host-overlay-enter-active {
+  transition: opacity 0.2s ease;
+}
+.host-overlay-leave-active {
+  transition: opacity 0.15s ease;
+}
+.host-overlay-enter-from,
+.host-overlay-leave-to {
+  opacity: 0;
+}
+
+/* ── Overlay backdrop ── */
 .host-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 5, 20, 0.65);
   z-index: 200;
   display: flex;
   align-items: flex-end;
 }
 
+/* ── Bottom sheet panel ── */
 .host-panel {
   width: 100%;
   background: var(--bg-panel);
-  border-top: 1px solid var(--glow-30);
-  border-radius: 16px 16px 0 0;
-  padding: 1.5rem;
-  max-height: 50vh;
+  border-top: 1px solid rgba(25, 233, 255, 0.18);
+  border-radius: 18px 18px 0 0;
+  max-height: 55vh;
   overflow-y: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  animation: host-panel-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.host-panel-title {
-  margin: 0 0 1rem 0;
-  color: var(--text);
-  font-size: 1rem;
-  font-family: 'Chakra Petch', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-bottom: 2px solid var(--glow);
-  padding-bottom: 0.75rem;
+@keyframes host-panel-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
 
-.host-theme-list {
+.host-panel-handle {
+  width: 36px;
+  height: 3px;
+  background: rgba(226, 244, 248, 0.14);
+  border-radius: 999px;
+  margin: 0.75rem auto 0;
+}
+
+/* ── Panel header ── */
+.host-panel-header {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem 0.75rem;
+  border-bottom: 1px solid rgba(25, 233, 255, 0.1);
+}
+
+.host-panel-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.host-panel-header-title svg {
+  color: var(--glow);
+  opacity: 0.8;
+}
+
+.host-panel-header-stat {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.72rem;
+}
+
+.stat-avail {
+  color: var(--glow);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.stat-sep,
+.stat-unit {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.stat-total {
+  color: var(--text-muted);
+}
+
+/* ── Theme rows ── */
+.host-theme-rows {
+  padding: 0.35rem 0 0.35rem;
+}
+
+.host-theme-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1.25rem;
+  transition: background 0.15s;
+}
+
+.host-theme-row:not(:last-child) {
+  border-bottom: 1px solid rgba(25, 233, 255, 0.06);
+}
+
+.host-theme-row:not(.consumed):active {
+  background: rgba(25, 233, 255, 0.04);
+}
+
+.row-index {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(25, 233, 255, 0.55);
+  flex-shrink: 0;
+  width: 1.4rem;
+}
+
+.host-theme-row.consumed .row-index {
+  color: rgba(226, 244, 248, 0.2);
+}
+
+.row-name {
+  flex: 1;
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.row-status {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.5rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.host-theme-row:not(.consumed) .row-status {
+  color: var(--glow);
+  background: rgba(25, 233, 255, 0.1);
+  border: 1px solid rgba(25, 233, 255, 0.22);
+}
+
+/* Consumed state */
+.host-theme-row.consumed {
+  opacity: 0.35;
+}
+
+.host-theme-row.consumed .row-name {
+  text-decoration: line-through;
+  text-decoration-color: rgba(226, 244, 248, 0.25);
+}
+
+.host-theme-row.consumed .row-status {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 </style>
