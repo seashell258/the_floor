@@ -1,9 +1,12 @@
 <template>
   <section class="section">
-    <h3>抽挑戰者</h3>
     <div class="wheel-inner">
       <div class="wheel-controls">
-        <button class="wheel-btn" @click="handleDrawFromWheel">開始抽籤</button>
+        <button
+          class="wheel-btn primary"
+          @click="handleDrawFromWheel"
+          :disabled="gameStore.wheelPlayers.length === 0 || isCycling"
+        >開始抽籤</button>
         <button class="wheel-btn" @click="handleResetWheel">開始下一輪!</button>
         <button class="wheel-btn" @click="handleShowRemoveDialog">移除陣亡者</button>
       </div>
@@ -24,18 +27,36 @@
       </div>
     </div>
 
-    <div v-if="showDrawConfirm" class="modal-overlay" @click="cancelDraw">
-      <div class="modal-content confirm-modal" @click.stop>
-        <div class="confirm-icon">⚡</div>
-        <h4>確認抽籤</h4>
-        <p class="confirm-text">是否要開始抽籤？</p>
-        <div class="confirm-actions">
-          <button class="confirm-btn confirm-yes" @click="confirmDraw">確認</button>
-          <button class="confirm-btn confirm-no" @click="cancelDraw">取消</button>
+    <!-- Dramatic draw reveal overlay -->
+    <Teleport to="body">
+      <div
+        v-if="overlayVisible"
+        class="draw-overlay"
+        :class="{ 'is-revealed': isRevealed }"
+        @click="handleOverlayClick"
+      >
+        <div class="scanlines" />
+        <div v-if="isRevealed" class="bg-glow" />
+
+        <div class="draw-stage">
+          <!-- Corner brackets -->
+          <div class="bracket tl" />
+          <div class="bracket tr" />
+          <div class="bracket bl" />
+          <div class="bracket br" />
+
+          <div class="draw-label">本輪挑戰者</div>
+
+          <div class="draw-name" :class="{ cycling: isCycling, revealed: isRevealed }">
+            {{ displayName }}
+          </div>
+
+          <div v-if="isRevealed" class="draw-hint">TAP TO CONTINUE</div>
         </div>
       </div>
-    </div>
+    </Teleport>
 
+    <!-- Remove dialog (unchanged) -->
     <div v-if="showRemoveDialog" class="modal-overlay" @click="handleHideRemoveDialog">
       <div class="modal-content" @click.stop>
         <h4>移除陣亡者</h4>
@@ -55,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../../pinia/store'
 
 const props = defineProps<{
@@ -64,25 +85,75 @@ const props = defineProps<{
 
 const gameStore = useGameStore()
 const showRemoveDialog = ref(false)
-const showDrawConfirm = ref(false)
+const isCycling = ref(false)
+const isRevealed = ref(false)
+const displayName = ref('')
+let dismissTimer: number | null = null
+let cycleTimer: ReturnType<typeof setTimeout> | null = null
+
+const overlayVisible = computed(() => isCycling.value || isRevealed.value)
 
 onMounted(() => {
   if (!gameStore.wheelInitialized) gameStore.initWheel()
 })
 
+onUnmounted(() => {
+  if (dismissTimer) clearTimeout(dismissTimer)
+  if (cycleTimer) clearTimeout(cycleTimer)
+})
+
 function handleDrawFromWheel() {
-  if (gameStore.wheelPlayers.length === 0) return
-  showDrawConfirm.value = true
-}
+  if (gameStore.wheelPlayers.length === 0 || isCycling.value) return
 
-function confirmDraw() {
-  showDrawConfirm.value = false
+  const poolNames = gameStore.wheelPlayers.map(p => p.name)
   const selected = gameStore.drawFromWheel()
-  if (selected) gameStore.setChallenger(selected)
+  if (!selected) return
+  gameStore.setChallenger(selected)
+
+  const finalName = selected.name
+  isCycling.value = true
+  isRevealed.value = false
+  displayName.value = poolNames[0] ?? finalName
+
+  startCycle(poolNames, finalName)
 }
 
-function cancelDraw() {
-  showDrawConfirm.value = false
+function startCycle(pool: string[], finalName: string) {
+  // Shorter total if only 1 player (nothing to cycle through)
+  const totalMs = pool.length <= 1 ? 350 : 950
+  const startMs = 50
+  const endMs = 190
+  let elapsed = 0
+
+  function tick() {
+    displayName.value = pool[Math.floor(Math.random() * pool.length)]
+    const t = Math.min(elapsed / totalMs, 1)
+    // Ease-in deceleration: starts fast, slows toward end
+    const interval = startMs + (endMs - startMs) * (t * t)
+    elapsed += interval
+
+    if (elapsed < totalMs) {
+      cycleTimer = setTimeout(tick, interval)
+    } else {
+      displayName.value = finalName
+      isCycling.value = false
+      isRevealed.value = true
+      dismissTimer = window.setTimeout(dismissReveal, 4500)
+    }
+  }
+
+  cycleTimer = setTimeout(tick, startMs)
+}
+
+function handleOverlayClick() {
+  if (isCycling.value) return
+  dismissReveal()
+}
+
+function dismissReveal() {
+  if (dismissTimer) { clearTimeout(dismissTimer); dismissTimer = null }
+  isRevealed.value = false
+  isCycling.value = false
 }
 
 function handleResetWheel() {
@@ -112,15 +183,6 @@ function handleRemovePlayer(playerName: string) {
   box-shadow: 0 0 20px var(--glow-10);
 }
 
-.section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--text);
-  font-family: 'Chakra Petch', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 1rem;
-}
-
 .wheel-inner {
   display: flex;
   flex-direction: column;
@@ -146,23 +208,25 @@ function handleRemovePlayer(playerName: string) {
   transition: all 0.2s;
 }
 
+.wheel-btn.primary,
 .wheel-btn:first-child {
   background: var(--glow);
   color: var(--bg-panel);
   border: none;
 }
 
+.wheel-btn.primary:hover:not(:disabled),
 .wheel-btn:first-child:hover:not(:disabled) {
   background: var(--glow-bright);
 }
 
-.wheel-btn:not(:first-child) {
+.wheel-btn:not(.primary):not(:first-child) {
   background: transparent;
   color: var(--glow);
   border: 1px solid var(--glow);
 }
 
-.wheel-btn:not(:first-child):hover:not(:disabled) {
+.wheel-btn:not(.primary):not(:first-child):hover:not(:disabled) {
   background: var(--glow-10);
 }
 
@@ -220,6 +284,157 @@ function handleRemovePlayer(playerName: string) {
   color: var(--glow);
   font-family: 'Chakra Petch', sans-serif;
 }
+
+/* ─── Draw Overlay ─── */
+
+.draw-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 6, 20, 0.97);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.draw-overlay.is-revealed {
+  cursor: pointer;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.18) 3px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.bg-glow {
+  position: absolute;
+  width: min(80vw, 560px);
+  height: min(80vw, 560px);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(25, 233, 255, 0.10) 0%,
+    rgba(25, 233, 255, 0.04) 40%,
+    transparent 70%
+  );
+  animation: bg-breathe 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes bg-breathe {
+  0%, 100% { transform: scale(0.92); opacity: 0.8; }
+  50%       { transform: scale(1.06); opacity: 1; }
+}
+
+.draw-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 3rem 2.5rem;
+  z-index: 1;
+}
+
+/* Targeting brackets */
+.bracket {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  opacity: 0.45;
+}
+
+.bracket.tl { top: 0;    left: 0;  border-top:  2px solid var(--glow); border-left:  2px solid var(--glow); }
+.bracket.tr { top: 0;    right: 0; border-top:  2px solid var(--glow); border-right: 2px solid var(--glow); }
+.bracket.bl { bottom: 0; left: 0;  border-bottom: 2px solid var(--glow); border-left:  2px solid var(--glow); }
+.bracket.br { bottom: 0; right: 0; border-bottom: 2px solid var(--glow); border-right: 2px solid var(--glow); }
+
+.draw-label {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--glow);
+  opacity: 0.55;
+}
+
+.draw-name {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(3.2rem, 13vw, 6.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-align: center;
+  max-width: 90vw;
+  word-break: break-all;
+}
+
+/* Cycling state: dim, blurry, flickering */
+.draw-name.cycling {
+  color: rgba(226, 244, 248, 0.35);
+  filter: blur(2px);
+  animation: cycle-flicker 0.08s steps(1) infinite;
+}
+
+@keyframes cycle-flicker {
+  0%   { opacity: 0.30; }
+  33%  { opacity: 0.40; }
+  66%  { opacity: 0.25; }
+  100% { opacity: 0.35; }
+}
+
+/* Revealed state: slam in + full glow */
+.draw-name.revealed {
+  color: #ffffff;
+  animation: slam-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  text-shadow:
+    0 0 18px var(--glow),
+    0 0 45px rgba(25, 233, 255, 0.35),
+    0 0 90px rgba(25, 233, 255, 0.12);
+}
+
+@keyframes slam-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.15);
+    filter: blur(28px);
+    text-shadow: none;
+  }
+  65% {
+    transform: scale(1.07);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+.draw-hint {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--glow);
+  opacity: 0;
+  animation: hint-appear 0.4s ease 1.1s forwards;
+}
+
+@keyframes hint-appear {
+  to { opacity: 0.35; }
+}
+
+/* ─── Remove dialog (unchanged) ─── */
 
 .modal-overlay {
   position: fixed;
@@ -301,72 +516,5 @@ function handleRemovePlayer(playerName: string) {
 
 .cancel-btn:hover {
   color: var(--text);
-}
-
-.confirm-modal {
-  text-align: center;
-  max-width: 320px;
-  border-color: var(--glow);
-  box-shadow: 0 0 30px var(--glow-30), 0 4px 20px rgba(0, 0, 0, 0.6);
-}
-
-.confirm-icon {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
-  filter: drop-shadow(0 0 8px var(--glow));
-}
-
-.confirm-modal h4 {
-  font-size: 1.1rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--glow);
-  margin-bottom: 0.5rem;
-}
-
-.confirm-text {
-  color: var(--text-muted);
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
-}
-
-.confirm-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: center;
-}
-
-.confirm-btn {
-  padding: 0.6rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'Chakra Petch', sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-}
-
-.confirm-yes {
-  background: var(--glow);
-  color: var(--bg-panel);
-  border: none;
-}
-
-.confirm-yes:hover {
-  background: var(--glow-bright);
-  box-shadow: 0 0 12px var(--glow-30);
-}
-
-.confirm-no {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid rgba(25, 233, 255, 0.2);
-}
-
-.confirm-no:hover {
-  color: var(--text);
-  border-color: rgba(25, 233, 255, 0.4);
 }
 </style>
