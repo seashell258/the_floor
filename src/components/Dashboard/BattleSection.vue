@@ -305,7 +305,12 @@ function endBattle() {
       isConsumed: t.isConsumed
     }))
   })
-  showContinueDialog.value = true
+  if (isHostBattle.value) {
+    gameStore.clearChallenger()
+    emit('battle-ended')
+  } else {
+    showContinueDialog.value = true
+  }
 }
 
 function confirmContinue() {
