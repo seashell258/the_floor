@@ -131,6 +131,45 @@
         </div>
       </section>
     </div>
+
+    <!-- Host themes floating button — fixed bottom-left, visible on both tabs -->
+    <button
+      v-if="gameStore.hostThemes.length > 0"
+      class="host-themes-btn"
+      @click="hostPanelOpen = !hostPanelOpen"
+      :title="hostPanelOpen ? '關閉主持人主題' : '主持人主題'"
+    >
+      <Shield :size="20" />
+    </button>
+
+    <!-- HOST THEMES PANEL
+         Mobile-first bottom sheet: slides up from bottom on open, fixed overlay
+         Button: fixed bottom-left, small icon button (Shield icon)
+         Panel: full width, rounded top corners, max-height ~50vh, scrollable
+         Theme pills: reuse .theme-pill and .theme-pill.consumed styles
+         Background overlay: semi-transparent, tap to close
+         Panel visible on both tabs (投票 and 玩家狀態) -->
+    <Teleport to="body">
+      <div
+        v-if="hostPanelOpen"
+        class="host-panel-overlay"
+        @click.self="hostPanelOpen = false"
+      >
+        <div class="host-panel">
+          <h4 class="host-panel-title">主持人主題</h4>
+          <div class="host-theme-list">
+            <div
+              v-for="theme in gameStore.hostThemes"
+              :key="theme.name"
+              class="theme-pill"
+              :class="{ consumed: theme.isConsumed }"
+            >
+              {{ theme.name }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -143,6 +182,7 @@ import { Check, Clock, Shield } from 'lucide-vue-next'
 
 const gameStore = useGameStore()
 const activeTab = ref<'vote' | 'status'>('vote')
+const hostPanelOpen = ref(false)
 
 const VOTE_WINDOW_MS = 7000
 const now = ref(Date.now())
@@ -670,5 +710,66 @@ function getVotePercentage(playerNum: number): number {
   .player-list {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+/* Host themes floating button + bottom sheet panel */
+.host-themes-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 100;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-panel);
+  border: 1px solid var(--glow-30);
+  color: var(--glow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.host-themes-btn:hover {
+  border-color: var(--glow);
+  box-shadow: 0 2px 18px var(--glow-30);
+}
+
+.host-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.host-panel {
+  width: 100%;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--glow-30);
+  border-radius: 16px 16px 0 0;
+  padding: 1.5rem;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.host-panel-title {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: 'Chakra Petch', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid var(--glow);
+  padding-bottom: 0.75rem;
+}
+
+.host-theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 </style>
