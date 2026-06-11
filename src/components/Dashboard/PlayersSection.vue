@@ -2,7 +2,7 @@
   <section class="section">
     <h3>玩家狀態</h3>
     <div class="player-list">
-      <div v-for="player in players" :key="player.name" class="player-card" :class="{ eliminated: player.eliminated }">
+      <div v-for="player in players" :key="player.name" class="player-card" :class="{ eliminated: player.eliminated, 'streak-ready': player.streakRewardCharges > 0 }">
         <div class="player-card-header">
           <div>
             <h4>{{ player.name }}</h4>
@@ -277,6 +277,17 @@ function handleStartDuel() {
 .player-card.eliminated {
   opacity: 0.5;
   border-color: var(--danger);
+}
+
+.player-card.streak-ready {
+  border-color: var(--warn);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+  animation: streak-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes streak-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.15); }
+  50% { box-shadow: 0 0 28px rgba(245, 158, 11, 0.5); }
 }
 
 .player-card-header {
