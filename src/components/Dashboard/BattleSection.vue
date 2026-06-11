@@ -310,6 +310,8 @@ function endBattle() {
 
 function confirmContinue() {
   showContinueDialog.value = false
+  const winnerPlayer = gameStore.players.find(p => p.name === pendingWinnerName.value)
+  if (winnerPlayer) gameStore.setChallenger(winnerPlayer)
   pendingWinnerName.value = ''
   emit('battle-ended')
 }
