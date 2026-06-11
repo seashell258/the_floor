@@ -90,7 +90,7 @@
       @click.self="confirmRestart"
     >
       <div class="continue-dialog">
-        <p class="continue-question">讓 <strong>{{ pendingWinnerName }}</strong> 繼續挑戰？</p>
+        <p class="continue-question"> <strong>{{ pendingWinnerName }}</strong> 要繼續挑戰？</p>
         <div class="continue-actions">
           <button type="button" class="continue-btn primary" @click="confirmContinue">繼續挑戰</button>
           <button type="button" class="continue-btn secondary" @click="confirmRestart">見好就收</button>
@@ -325,6 +325,7 @@ function confirmContinue() {
 function confirmRestart() {
   showContinueDialog.value = false
   gameStore.removeFromWheel(pendingWinnerName.value)
+  gameStore.resetWinStreak(pendingWinnerName.value)
   pendingWinnerName.value = ''
   gameStore.clearChallenger()
   emit('battle-ended')

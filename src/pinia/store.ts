@@ -275,6 +275,11 @@ export const useGameStore = defineStore('game', () => {
     state.value.wheelPlayerNames = state.value.wheelPlayerNames.filter(n => n !== name)
   }
 
+  function resetWinStreak(playerName: string) {
+    const player = state.value.players.find(p => p.name === playerName)
+    if (player) player.winStreak = 0
+  }
+
   function setChallenger(player: Player) {
     state.value.currentChallenger = { challenger: player }
   }
@@ -635,6 +640,7 @@ export const useGameStore = defineStore('game', () => {
     drawFromWheel,
     resetWheel,
     removeFromWheel,
+    resetWinStreak,
     setHostCurrentTheme,
     initializeHostThemes,
     hostThemes,
