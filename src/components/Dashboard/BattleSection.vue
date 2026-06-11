@@ -90,7 +90,7 @@
       @click.self="confirmRestart"
     >
       <div class="continue-dialog">
-        <p class="continue-question">讓 <strong>{{ gameStore.battleWinner }}</strong> 繼續挑戰？</p>
+        <p class="continue-question">讓 <strong>{{ pendingWinnerName }}</strong> 繼續挑戰？</p>
         <div class="continue-actions">
           <button type="button" class="continue-btn primary" @click="confirmContinue">繼續挑戰</button>
           <button type="button" class="continue-btn secondary" @click="confirmRestart">重新選人</button>
@@ -157,6 +157,7 @@ const borderFlashClass = computed(() => ({
 const currentPhotoIndex = ref(0)
 const showAnswer = ref(false)
 const showContinueDialog = ref(false)
+const pendingWinnerName = ref('')
 
 const PHOTO_FORMATS = ['avif', 'webp', 'jpg', 'png', 'jpeg']
 const photoFormatIndex = ref(0)
@@ -280,6 +281,7 @@ watch(battleWinner, (winner) => {
 })
 
 function endBattle() {
+  pendingWinnerName.value = gameStore.battleWinner ?? ''
   stopBattleMusic()
   gameStore.resetBattle()
   socket.emit('pushVoteState', {
@@ -308,11 +310,13 @@ function endBattle() {
 
 function confirmContinue() {
   showContinueDialog.value = false
+  pendingWinnerName.value = ''
   emit('battle-ended')
 }
 
 function confirmRestart() {
   showContinueDialog.value = false
+  pendingWinnerName.value = ''
   gameStore.clearChallenger()
   emit('battle-ended')
 }
