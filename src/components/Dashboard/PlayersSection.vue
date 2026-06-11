@@ -1,14 +1,6 @@
 <template>
   <section class="section">
 
-    <!-- Challenger banner — sticky, appears once a challenger is drawn -->
-    <div v-if="gameStore.currentChallenger" class="challenger-banner">
-      <span class="cb-eyebrow">挑戰者</span>
-      <span class="cb-name">{{ gameStore.currentChallenger.challenger.name }}</span>
-
-    </div>
-    <div v-else class="no-challenger-hint">尚無挑戰者</div>
-
     <div class="player-list">
       <div
         v-for="player in players"
@@ -319,71 +311,13 @@ function handleStartDuel() {
   box-shadow: 0 0 20px var(--glow-10);
 }
 
-/* ─── Challenger Banner ─── */
-
-.challenger-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 1rem;
-  margin-bottom: 1.25rem;
-  background: rgba(25, 233, 255, 0.07);
-  border: 1px solid var(--glow);
-  border-radius: 8px;
-  box-shadow: 0 0 16px var(--glow-10);
-  animation: banner-in 0.3s ease both;
-}
-
-@keyframes banner-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.cb-eyebrow {
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.22em;
-  color: var(--glow);
-  opacity: 0.6;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.cb-name {
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--glow);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cb-sub {
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.no-challenger-hint {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  font-family: 'Chakra Petch', sans-serif;
-  text-align: center;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  opacity: 0.6;
-}
 
 /* ─── Player Grid ─── */
 
 .player-list {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 @media (min-width: 768px) {
@@ -552,14 +486,14 @@ function handleStartDuel() {
 
 .self-zone {
   position: relative;
-  min-height: 56px;
+  min-height: 90px;
   border: 1px solid rgba(255, 190, 40, 0.3);
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 190, 40, 0.04);
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.15rem;
 }
 
 .self-bracket {
@@ -623,6 +557,12 @@ function handleStartDuel() {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.player-card:hover .secondary-themes {
+  opacity: 1;
 }
 
 .secondary-label {
