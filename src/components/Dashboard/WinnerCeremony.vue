@@ -44,7 +44,6 @@ import { playStreakSFX } from '../../composables/useAudio'
 const props = defineProps<{
   winner: string
   isStreak: boolean
-  isHostBattle: boolean
 }>()
 
 const emit = defineEmits<{ (e: 'dismissed'): void }>()
