@@ -28,7 +28,7 @@
       </div>
 
       <div class="ceremony-center">
-        <div v-if="isStreak" class="streak-label">二連勝!!</div>
+        <div v-if="isStreak" class="streak-label">連勝!</div>
         <div v-else class="win-label">勝利</div>
         <div class="winner-name" :class="{ 'winner-name--streak': isStreak }">
           {{ winner }}
