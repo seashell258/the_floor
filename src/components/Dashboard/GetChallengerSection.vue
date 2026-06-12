@@ -1,29 +1,59 @@
 <template>
   <section class="section">
-    <div class="wheel-inner">
-      <div class="wheel-controls">
+
+    <!-- Challenger hero — visible in state B (post-reveal) -->
+    <div v-if="gameStore.currentChallenger" class="challenger-hero">
+      <span class="challenger-label">本輪挑戰者</span>
+      <span class="challenger-name" :key="gameStore.currentChallenger.challenger.name">
+        {{ gameStore.currentChallenger.challenger.name }}
+      </span>
+    </div>
+    <div v-if="gameStore.currentChallenger" class="hero-divider" />
+
+    <!-- Candidate pool -->
+    <div class="pool-area">
+      <div v-if="gameStore.wheelPlayers.length === 0" class="no-players">
+        輪次已結束
+      </div>
+      <div v-else class="candidate-grid">
+        <div
+          v-for="(player, i) in gameStore.wheelPlayers"
+          :key="player.name"
+          class="candidate-card"
+          :class="{ dimmed: !!gameStore.currentChallenger }"
+          :style="{ animationDelay: `${(i * 0.41) % 3.5}s` }"
+        >
+          {{ player.name }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <!-- Primary action: 開始抽籤 (state A) / secondary (state B) -->
+      <button
+        v-if="gameStore.wheelPlayers.length > 0"
+        class="draw-btn"
+        :class="{ 'draw-btn--secondary': !!gameStore.currentChallenger }"
+        @click="handleDrawFromWheel"
+        :disabled="isCycling"
+      >開始抽籤</button>
+
+      <!-- Primary action: 開始下一輪 (state C only) -->
+      <button
+        v-if="gameStore.wheelPlayers.length === 0"
+        class="draw-btn"
+        @click="handleResetWheel"
+      >開始下一輪</button>
+
+      <!-- Secondary controls: always present but small -->
+      <div class="sec-controls">
         <button
-          class="wheel-btn primary"
-          @click="handleDrawFromWheel"
-          :disabled="gameStore.wheelPlayers.length === 0 || isCycling"
-        >開始抽籤</button>
-        <button class="wheel-btn" @click="handleResetWheel">開始下一輪!</button>
-        <button class="wheel-btn" @click="handleShowRemoveDialog">移除陣亡者</button>
-      </div>
-
-      <div class="wheel-display">
-        <div v-if="gameStore.wheelPlayers.length === 0" class="no-players">
-          輪盤已空，請按上方「開始下一輪!」
-        </div>
-        <div v-else class="wheel-players">
-          <div v-for="player in gameStore.wheelPlayers" :key="player.name" class="wheel-player">
-            {{ player.name }}
-          </div>
-        </div>
-      </div>
-
-      <div v-if="gameStore.currentChallenger" class="drawn-result">
-        <p><strong>挑戰者：</strong>{{ gameStore.currentChallenger.challenger.name }}</p>
+          v-if="gameStore.wheelPlayers.length > 0"
+          class="sec-btn"
+          @click="handleResetWheel"
+        >下一輪</button>
+        <button class="sec-btn" @click="handleShowRemoveDialog">移除陣亡者</button>
       </div>
     </div>
 
@@ -181,67 +211,57 @@ function handleRemovePlayer(playerName: string) {
   border-radius: 8px;
   border: 1px solid var(--glow);
   box-shadow: 0 0 20px var(--glow-10);
-}
-
-.wheel-inner {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 1rem;
+  gap: 1.25rem;
 }
 
-.wheel-controls {
+/* ─── Challenger Hero ─── */
+
+.challenger-hero {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0 0.5rem;
+  gap: 0.4rem;
+  user-select: none;
 }
 
-.wheel-btn {
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
+.challenger-label {
   font-family: 'Chakra Petch', sans-serif;
-  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-}
-
-.wheel-btn.primary,
-.wheel-btn:first-child {
-  background: var(--glow);
-  color: var(--bg-panel);
-  border: none;
-}
-
-.wheel-btn.primary:hover:not(:disabled),
-.wheel-btn:first-child:hover:not(:disabled) {
-  background: var(--glow-bright);
-}
-
-.wheel-btn:not(.primary):not(:first-child) {
-  background: transparent;
   color: var(--glow);
-  border: 1px solid var(--glow);
+  opacity: 0.5;
 }
 
-.wheel-btn:not(.primary):not(:first-child):hover:not(:disabled) {
-  background: var(--glow-10);
+.challenger-name {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(2.4rem, 8vw, 4rem);
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 0 20px var(--glow), 0 0 50px rgba(25, 233, 255, 0.3);
+  animation: challenger-land 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  line-height: 1.1;
+  text-align: center;
 }
 
-.wheel-btn:disabled {
-  background: var(--bg-surface);
-  color: var(--text-muted);
-  border-color: transparent;
-  cursor: not-allowed;
+@keyframes challenger-land {
+  from { opacity: 0; transform: scale(0.88); filter: blur(8px); }
+  to   { opacity: 1; transform: scale(1);    filter: blur(0); }
 }
 
-.wheel-display {
-  min-height: 200px;
-  border: 1px dashed rgba(25, 233, 255, 0.35);
-  border-radius: 12px;
-  padding: 1rem;
+.hero-divider {
+  height: 1px;
+  background: rgba(25, 233, 255, 0.15);
+  width: 100%;
+}
+
+/* ─── Candidate Pool ─── */
+
+.pool-area {
+  min-height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -250,39 +270,114 @@ function handleRemovePlayer(playerName: string) {
 .no-players {
   text-align: center;
   color: var(--text-muted);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
 }
 
-.wheel-players {
-  display: flex;
-  flex-wrap: wrap;
+.candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 0.75rem;
-  justify-content: center;
+  width: 100%;
 }
 
-.wheel-player {
-  background: var(--bg-surface);
-  border: 1px solid var(--glow-30);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: bold;
-  color: var(--glow);
-  font-family: 'Chakra Petch', sans-serif;
-}
-
-.drawn-result {
-  text-align: center;
-  padding: 1rem;
-  background: var(--bg-surface);
+.candidate-card {
+  padding: 0.85rem 1.25rem;
   border-radius: 8px;
-  border: 1px solid var(--glow);
-  box-shadow: 0 0 12px var(--glow-30);
+  border: 1px solid rgba(25, 233, 255, 0.25);
+  background: var(--bg-surface);
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  animation: card-breathe 3.5s ease-in-out infinite;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  user-select: none;
 }
 
-.drawn-result p {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--glow);
+.candidate-card.dimmed {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+@keyframes card-breathe {
+  0%, 100% { box-shadow: none; border-color: rgba(25, 233, 255, 0.2); }
+  50%       { box-shadow: 0 0 12px rgba(25, 233, 255, 0.18); border-color: rgba(25, 233, 255, 0.5); }
+}
+
+/* ─── Controls ─── */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.draw-btn {
+  flex: 1;
+  padding: 0.9rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
   font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  background: var(--glow);
+  color: var(--bg-panel);
+  border: none;
+  transition: background 0.2s;
+}
+
+.draw-btn:hover:not(:disabled) {
+  background: var(--glow-bright);
+}
+
+.draw-btn:disabled {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.draw-btn--secondary {
+  flex: none;
+  padding: 0.55rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--glow);
+  border: 1px solid var(--glow-30);
+}
+
+.draw-btn--secondary:hover:not(:disabled) {
+  background: var(--glow-10);
+}
+
+.sec-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.sec-btn {
+  padding: 0.45rem 0.75rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid rgba(25, 233, 255, 0.15);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.sec-btn:hover {
+  color: var(--text);
+  border-color: var(--glow-30);
 }
 
 /* ─── Draw Overlay ─── */
