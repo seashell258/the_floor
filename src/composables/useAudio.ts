@@ -262,3 +262,58 @@ export function playWinnerSFX() {
   })
 
 }
+
+export function playStreakSFX() {
+  const ac = getCtx()
+  const now = ac.currentTime
+
+  // Low thud
+  const thudOsc = ac.createOscillator()
+  const thudGain = ac.createGain()
+  thudOsc.type = 'sine'
+  thudOsc.frequency.setValueAtTime(120, now)
+  thudOsc.frequency.exponentialRampToValueAtTime(40, now + 0.11)
+  thudGain.gain.setValueAtTime(0.32, now)
+  thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11)
+  thudOsc.connect(thudGain)
+  thudGain.connect(master())
+  thudOsc.start(now)
+  thudOsc.stop(now + 0.12)
+
+  // Tri-tone chord hit
+  const hitTime = now + 0.05
+  ;[220, 330, 440].forEach((freq, i) => {
+    const osc = ac.createOscillator()
+    const gain = ac.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = freq
+    gain.gain.setValueAtTime(0, hitTime)
+    gain.gain.linearRampToValueAtTime(0.18 - i * 0.04, hitTime + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.001, hitTime + 0.45)
+    osc.connect(gain)
+    gain.connect(master())
+    osc.start(hitTime)
+    osc.stop(hitTime + 0.5)
+  })
+
+  // Upward sawtooth sweep with reverb tail
+  const sweepTime = now + 0.2
+  const reverb = createReverb(ac, 1.5, 2.0)
+  const reverbGain = ac.createGain()
+  reverbGain.gain.value = 0.6
+  reverb.connect(reverbGain)
+  reverbGain.connect(master())
+
+  const sweepOsc = ac.createOscillator()
+  const sweepGain = ac.createGain()
+  sweepOsc.type = 'sawtooth'
+  sweepOsc.frequency.setValueAtTime(300, sweepTime)
+  sweepOsc.frequency.exponentialRampToValueAtTime(900, sweepTime + 0.3)
+  sweepGain.gain.setValueAtTime(0.15, sweepTime)
+  sweepGain.gain.exponentialRampToValueAtTime(0.001, sweepTime + 0.5)
+  sweepOsc.connect(sweepGain)
+  sweepGain.connect(master())
+  sweepGain.connect(reverb)
+  sweepOsc.start(sweepTime)
+  sweepOsc.stop(sweepTime + 0.55)
+}
