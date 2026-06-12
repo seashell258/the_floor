@@ -5,6 +5,8 @@
       :class="[{ 'streak-mode': isStreak }, { fading: fading }]"
       @click="isStreak ? handleDismiss() : undefined"
     >
+      <div v-if="isStreak" class="impact-flash" />
+
       <div v-if="isStreak" class="fire-particles">
         <span
           v-for="i in 18"
@@ -25,7 +27,7 @@
         />
       </div>
 
-      <div class="ceremony-center" :class="{ shaking: shaking }">
+      <div class="ceremony-center">
         <div v-if="isStreak" class="streak-label">二連勝!!</div>
         <div v-else class="win-label">勝利</div>
         <div class="winner-name" :class="{ 'winner-name--streak': isStreak }">
@@ -49,7 +51,6 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'dismissed'): void }>()
 
 const fading = ref(false)
-const shaking = ref(false)
 
 function fireParticleStyle(i: number) {
   const left = 3 + ((i - 1) / 18) * 94
@@ -84,8 +85,6 @@ function handleDismiss() {
 onMounted(() => {
   if (props.isStreak) {
     playStreakSFX()
-    shaking.value = true
-    setTimeout(() => { shaking.value = false }, 420)
   } else {
     setTimeout(() => {
       fading.value = true
@@ -115,6 +114,7 @@ onMounted(() => {
 .ceremony-overlay.streak-mode {
   background: rgba(10, 2, 0, 0.92);
   cursor: pointer;
+  animation: overlay-in 0.25s ease-out, streak-screen-shake 1.6s 0.04s ease-out forwards;
 }
 
 .ceremony-overlay.streak-mode::before {
@@ -172,6 +172,15 @@ onMounted(() => {
   opacity: 0.85;
 }
 
+.impact-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255, 210, 0, 0.72) 0%, rgba(255, 100, 0, 0.42) 38%, transparent 65%);
+  animation: impact-flash-fade 0.5s ease-out forwards;
+  pointer-events: none;
+  z-index: 20;
+}
+
 .ceremony-center {
   position: relative;
   z-index: 10;
@@ -180,10 +189,6 @@ onMounted(() => {
   align-items: center;
   gap: 0.75rem;
   text-align: center;
-}
-
-.ceremony-center.shaking {
-  animation: screen-shake 0.42s ease-out;
 }
 
 .win-label {
@@ -205,7 +210,9 @@ onMounted(() => {
     0 0 20px #FF6B00,
     0 4px 12px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.04em;
-  animation: streak-stamp 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+  animation:
+    streak-stamp 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) forwards,
+    streak-breathe 2.8s 1.7s ease-in-out infinite;
 }
 
 .winner-name {
@@ -273,15 +280,53 @@ onMounted(() => {
   100% { transform: translateY(-90vh) translateX(var(--drift, 15px)); opacity: 0; }
 }
 
-@keyframes screen-shake {
-  0%   { transform: translate(0, 0); }
-  15%  { transform: translate(-4px, 2px); }
-  30%  { transform: translate(4px, -2px); }
-  45%  { transform: translate(-3px, 3px); }
-  60%  { transform: translate(3px, -1px); }
-  75%  { transform: translate(-2px, 1px); }
-  90%  { transform: translate(1px, -1px); }
-  100% { transform: translate(0, 0); }
+@keyframes streak-screen-shake {
+  /* Phase 1: violent impact */
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  3%   { transform: translate(-11px, -8px) rotate(-0.7deg); }
+  6%   { transform: translate(13px, 9px) rotate(0.7deg); }
+  9%   { transform: translate(-13px, 6px) rotate(-0.5deg); }
+  12%  { transform: translate(12px, -8px) rotate(0.5deg); }
+  15%  { transform: translate(-10px, 10px) rotate(-0.6deg); }
+  18%  { transform: translate(11px, -10px) rotate(0.6deg); }
+  21%  { transform: translate(-8px, -6px) rotate(-0.4deg); }
+  27%  { transform: translate(7px, 5px) rotate(0.3deg); }
+  /* Phase 2: decelerating */
+  33%  { transform: translate(-5px, -4px) rotate(-0.2deg); }
+  39%  { transform: translate(5px, 4px) rotate(0.2deg); }
+  45%  { transform: translate(-3px, 2px); }
+  51%  { transform: translate(3px, -2px); }
+  /* Phase 3: micro-vibration */
+  57%  { transform: translate(-1.8px, 1.2px); }
+  63%  { transform: translate(1.8px, -1px); }
+  69%  { transform: translate(-1px, 0.8px); }
+  75%  { transform: translate(0.8px, -0.6px); }
+  /* Phase 4: peace */
+  83%  { transform: translate(-0.4px, 0.3px); }
+  91%  { transform: translate(0.2px, -0.2px); }
+  96%  { transform: translate(-0.1px, 0.1px); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes impact-flash-fade {
+  0%   { opacity: 1; transform: scale(0.85); }
+  18%  { opacity: 0.85; transform: scale(1.08); }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+
+@keyframes streak-breathe {
+  0%, 100% {
+    text-shadow:
+      0 0 20px #FF6B00,
+      0 4px 12px rgba(0, 0, 0, 0.8);
+  }
+  50% {
+    text-shadow:
+      0 0 55px #FF6B00,
+      0 0 110px rgba(255, 107, 0, 0.3),
+      0 0 18px #FFD700,
+      0 4px 12px rgba(0, 0, 0, 0.8);
+  }
 }
 
 @keyframes streak-stamp {
