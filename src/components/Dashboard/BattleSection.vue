@@ -52,7 +52,7 @@
           </div>
         </div>
 
-        <div v-if="battleWinner && battleInfo" class="result-panel">
+        <div v-if="battleWinner && battleInfo && !showCeremony" class="result-panel">
           <div class="winner-announcement">
             <template v-if="isHostBattle">
               <template v-if="battleWinner === '主持人'">主持人勝利，{{ hostBattlePlayerName }}解鎖失敗</template>
@@ -98,6 +98,13 @@
       </div>
     </div>
   </Teleport>
+
+  <WinnerCeremony
+    v-if="battleWinner && showCeremony"
+    :winner="battleWinner!"
+    :is-streak="ceremonyIsStreak"
+    @dismissed="onCeremonyDismissed"
+  />
 </template>
 
 <script setup lang="ts">
@@ -110,6 +117,7 @@ import {
   startBattleMusic, stopBattleMusic,
   playNextSFX, playSkipSFX, playWinnerSFX
 } from '../../composables/useAudio'
+import WinnerCeremony from './WinnerCeremony.vue'
 
 const emit = defineEmits<{ (e: 'battle-ended'): void }>()
 
@@ -158,6 +166,12 @@ const currentPhotoIndex = ref(0)
 const showAnswer = ref(false)
 const showContinueDialog = ref(false)
 const pendingWinnerName = ref('')
+const showCeremony = ref(false)
+const ceremonyIsStreak = computed(() => {
+  if (!battleWinner.value || isHostBattle.value) return false
+  const winner = gameStore.players.find(p => p.name === battleWinner.value)
+  return (winner?.winStreak ?? 0) >= 2
+})
 
 const PHOTO_FORMATS = ['avif', 'webp', 'jpg', 'png', 'jpeg']
 const photoFormatIndex = ref(0)
@@ -256,7 +270,10 @@ watch(battleInfo, (info) => {
 watch(battleWinner, (winner) => {
   if (!winner) return
   stopBattleMusic()
-  playWinnerSFX()
+  if (!ceremonyIsStreak.value) {
+    playWinnerSFX()
+  }
+  showCeremony.value = true
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
     voteResults: gameStore.voteResults,
@@ -329,6 +346,10 @@ function confirmRestart() {
   pendingWinnerName.value = ''
   gameStore.clearChallenger()
   emit('battle-ended')
+}
+
+function onCeremonyDismissed() {
+  showCeremony.value = false
 }
 
 onUnmounted(() => stopBattleMusic())
