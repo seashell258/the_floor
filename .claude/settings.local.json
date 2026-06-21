@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
-      "Bash(findstr /i \"test\\\\|vitest\\\\|jest\")"
+      "Bash(findstr /i \"test\\\\|vitest\\\\|jest\")",
+      "Bash(npx vue-tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

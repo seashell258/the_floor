@@ -105,6 +105,7 @@ onMounted(() => {
   background: rgba(0, 0, 0, 0.82);
   animation: overlay-in 0.25s ease-out forwards;
   overflow: hidden;
+  user-select: none;
 }
 
 .ceremony-overlay.fading {

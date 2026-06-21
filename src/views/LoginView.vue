@@ -86,6 +86,7 @@ h1 {
 .name-input {
   width: 100%;
   padding: 1rem;
+  user-select: text;
   background: var(--bg-surface);
   border: 1px solid rgba(25, 233, 255, 0.25);
   border-radius: 8px;

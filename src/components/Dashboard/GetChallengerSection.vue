@@ -90,7 +90,7 @@
     <div v-if="showRemoveDialog" class="modal-overlay" @click="handleHideRemoveDialog">
       <div class="modal-content" @click.stop>
         <h4>移除陣亡者</h4>
-        <p>選擇要永久移除的玩家：</p>
+
         <div class="player-list-modal">
           <div v-for="player in gameStore.players" :key="player.name" class="player-item">
             <span>{{ player.name }}</span>

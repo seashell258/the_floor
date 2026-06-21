@@ -60,6 +60,7 @@
 body {
   margin: 0;
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  user-select: none;
   background-color: var(--bg);
   background-image:
     radial-gradient(ellipse at 50% -20%, rgba(25, 233, 255, 0.10) 0%, transparent 55%),
