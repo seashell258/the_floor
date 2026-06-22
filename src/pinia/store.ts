@@ -51,7 +51,7 @@ export class ThemeStack {
   }
 
   peekActive(): ThemeData | undefined {
-    for (let i = this.items.length - 1; i >= 0; i--) {
+    for (let i = 0; i < this.items.length; i++) {
       if (!this.items[i].isConsumed && this.items[i].isActivated) return this.items[i]
     }
     return undefined
@@ -311,7 +311,7 @@ export const useGameStore = defineStore('game', () => {
       if (player.eliminated) continue
       if (player.name === challengerName) continue
       const items = player.themeStack.items
-      for (let i = items.length - 1; i >= 0; i--) {
+      for (let i = 0; i < items.length; i++) {
         const t = items[i]
         if (!t.isConsumed && t.isActivated) {
           keys.add(`${player.name}:${t.name}`)
