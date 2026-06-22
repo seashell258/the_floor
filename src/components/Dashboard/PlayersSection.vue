@@ -319,14 +319,13 @@ function isCurrentChallenger(player: any): boolean {
 
 // The first available (non-consumed, non-locked) theme — the primary battle target.
 function topAvailableTheme(player: any): any | null {
-  const reversed = [...player.themeStack.items].reverse()
-  return reversed.find((t: any) => themeClass(t, player.name) === '') ?? null
+  return player.themeStack.items.find((t: any) => themeClass(t, player.name) === '') ?? null
 }
 
 // Everything except the primary theme, for the secondary row.
 function secondaryThemes(player: any): any[] {
   const top = topAvailableTheme(player)
-  return [...player.themeStack.items].reverse().filter((t: any) => t !== top)
+  return player.themeStack.items.filter((t: any) => t !== top)
 }
 
 // ─── VS Screen + Countdown ───
