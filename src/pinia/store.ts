@@ -69,8 +69,7 @@ export interface Player {
   eliminated: boolean
   winStreak: number
   prop: 'time' | 'shield' | null
-  winsTowardNextReward: number
-  streakRewardCharges: number
+  pendingTimeBonuses: number[]
 }
 
 interface VoteResult {
@@ -262,7 +261,9 @@ export const useGameStore = defineStore('game', () => {
 
   function resetWinStreak(playerName: string) {
     const player = state.value.players.find(p => p.name === playerName)
-    if (player) player.winStreak = 0
+    if (!player) return
+    player.winStreak = 0
+    player.pendingTimeBonuses = []
   }
 
   function setChallenger(player: Player) {
@@ -319,14 +320,15 @@ export const useGameStore = defineStore('game', () => {
     if (player) player.prop = null
   }
 
-  function consumeStreakRewardCharge(playerName: string): void {
+  function consumePendingBonus(playerName: string, seconds: number): void {
     const player = state.value.players.find(p => p.name === playerName)
-    if (player) player.streakRewardCharges = 0
+    if (!player) return
+    const idx = player.pendingTimeBonuses.indexOf(seconds)
+    if (idx !== -1) player.pendingTimeBonuses.splice(idx, 1)
   }
 
-  function applyTimeProp(playerName: string): void {
-    state.value.timePropBonus[playerName] = (state.value.timePropBonus[playerName] ?? 0) + 3
-    consumeProp(playerName)
+  function applyTimeProp(playerName: string, seconds: number): void {
+    state.value.timePropBonus[playerName] = (state.value.timePropBonus[playerName] ?? 0) + seconds
   }
 
   /**
@@ -342,8 +344,7 @@ export const useGameStore = defineStore('game', () => {
       eliminated: false,
       winStreak: 0,
       prop: null,
-      winsTowardNextReward: 0,
-      streakRewardCharges: 0
+      pendingTimeBonuses: []
     }
   }
 
@@ -453,18 +454,17 @@ export const useGameStore = defineStore('game', () => {
     if (loser.themeStack.activeCount() === 0) loser.eliminated = true
 
     winner.winStreak += 1
-    if (winner.prop === null) {
-      if (winner.streakRewardCharges === 1) winner.streakRewardCharges = 0
-      winner.winsTowardNextReward += 1
-      if (winner.winsTowardNextReward >= 2) {
-        winner.streakRewardCharges = 1
-        winner.winsTowardNextReward = 0
-      }
+    if (winner.winStreak % 4 === 0) {
+      winner.pendingTimeBonuses.push(7)
+    } else if (winner.winStreak % 2 === 0) {
+      winner.pendingTimeBonuses.push(3)
+    }
+    if (loser.eliminated) {
+      winner.pendingTimeBonuses.push(5)
     }
 
     loser.winStreak = 0
-    loser.winsTowardNextReward = 0
-    loser.streakRewardCharges = 0
+    loser.pendingTimeBonuses = []
     state.value.battleWinner = winnerName
   }
 
@@ -631,7 +631,7 @@ export const useGameStore = defineStore('game', () => {
     activateRevivalTheme,
     consumeProp,
     applyTimeProp,
-    consumeStreakRewardCharge,
+    consumePendingBonus,
     applyVoteState
   }
 })
