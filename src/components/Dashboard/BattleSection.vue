@@ -77,7 +77,12 @@
       </div>
 
       <div class="battle-controls">
-        <button class="skip-btn" @click="skipQuestion" :disabled="isNextDisabled">跳過</button>
+        <button
+          class="skip-btn"
+          :class="{ danger: skipBtnDanger }"
+          @click="skipQuestion"
+          :disabled="isNextDisabled"
+        >{{ skipBtnLabel }}</button>
         <button class="next-btn" @click="nextQuestion" :disabled="isNextDisabled">下一題</button>
       </div>
     </div>
@@ -93,7 +98,7 @@
         <p class="continue-question"> <strong>{{ pendingWinnerName }}</strong> 要繼續挑戰？</p>
         <div class="continue-actions">
           <button type="button" class="continue-btn primary" @click="confirmContinue">繼續挑戰</button>
-          <button type="button" class="continue-btn secondary" @click="confirmRestart">見好就收</button>
+          <button type="button" class="continue-btn secondary" @click="confirmRestart">不要</button>
         </div>
       </div>
     </div>
@@ -167,6 +172,9 @@ const showAnswer = ref(false)
 const showContinueDialog = ref(false)
 const pendingWinnerName = ref('')
 const showCeremony = ref(false)
+const hasSkippedOnce = ref(false)
+const skipBtnLabel = computed(() => hasSkippedOnce.value ? '再次跳過' : '跳過')
+const skipBtnDanger = computed(() => hasSkippedOnce.value)
 const ceremonyIsStreak = computed(() => {
   if (!battleWinner.value || isHostBattle.value) return false
   const winner = gameStore.players.find(p => p.name === battleWinner.value)
@@ -212,15 +220,26 @@ const skipQuestion = () => {
   showAnswer.value = true
   gameStore.pauseTimer()
 
+  const wasFirstSkip = !hasSkippedOnce.value
+
   setTimeout(() => {
     const wasLast = currentPhotoIndex.value >= selectedThemePhotos.value.length - 1
     if (!wasLast) currentPhotoIndex.value += 1
     showAnswer.value = false
     currentAnswer.value = ''
     borderFlash.value = 'idle'
+
     if (wasLast) {
+      hasSkippedOnce.value = false
       resolveByTimer()
+    } else if (wasFirstSkip) {
+      // 1st skip: same player continues, flag set
+      hasSkippedOnce.value = true
+      gameStore.startTimer(gameStore.currentTimerPlayer || '')
     } else {
+      // 2nd consecutive skip: transfer answering rights
+      hasSkippedOnce.value = false
+      gameStore.switchTimer()
       gameStore.startTimer(gameStore.currentTimerPlayer || '')
     }
   }, 800)
@@ -244,6 +263,7 @@ const nextQuestion = () => {
     if (wasLast) {
       resolveByTimer()
     } else {
+      hasSkippedOnce.value = false
       gameStore.switchTimer()
       gameStore.startTimer(gameStore.currentTimerPlayer || '')
     }
@@ -578,6 +598,14 @@ onUnmounted(() => stopBattleMusic())
 }
 
 .skip-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.skip-btn.danger {
+  background: var(--danger);
+}
+
+.skip-btn.danger:hover:not(:disabled) {
   opacity: 0.85;
 }
 
