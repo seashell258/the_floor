@@ -8,7 +8,7 @@
         class="player-card"
         :class="{
           eliminated: player.eliminated,
-          'streak-ready': player.streakRewardCharges > 0,
+          'streak-ready': player.pendingTimeBonuses.length > 0,
           'battle-ready': !!gameStore.currentChallenger && !player.eliminated && !!topAvailableTheme(player) && !isCurrentChallenger(player) && immunePlayerName !== player.name,
           'is-self-challenger': isCurrentChallenger(player),
           'is-immune': immunePlayerName === player.name
@@ -29,12 +29,14 @@
               <Shield v-else :size="13" />
             </button>
             <button
-              v-if="player.streakRewardCharges > 0"
+              v-for="(bonus, i) in player.pendingTimeBonuses"
+              :key="i"
               class="streak-reward-btn"
-              @click.stop="applyStreakReward(player)"
-              title="連勝獎勵：+3秒"
+              :disabled="(gameStore.state.timePropBonus[player.name] ?? 0) > 0"
+              @click.stop="applyStreakReward(player, bonus)"
+              :title="`連勝獎勵：+${bonus}秒`"
             >
-              ⚡ +3秒
+              ⚡ +{{ bonus }}秒
             </button>
             <div class="player-badge">
               <span>連勝</span>
@@ -420,15 +422,15 @@ function shieldParticleStyle(i: number) {
 function handlePropClick(player: any): void {
   if (!player.prop) return
   if (player.prop === 'time') {
-    gameStore.applyTimeProp(player.name)
+    gameStore.applyTimeProp(player.name, 3)
   } else {
     gameStore.consumeProp(player.name)
   }
 }
 
-function applyStreakReward(player: any): void {
-  gameStore.applyTimeProp(player.name)
-  gameStore.consumeStreakRewardCharge(player.name)
+function applyStreakReward(player: any, bonus: number): void {
+  gameStore.applyTimeProp(player.name, bonus)
+  gameStore.consumePendingBonus(player.name, bonus)
 }
 
 function openRevivalConfirm(playerName: string): void {
