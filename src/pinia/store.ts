@@ -454,9 +454,9 @@ export const useGameStore = defineStore('game', () => {
     if (loser.themeStack.activeCount() === 0) loser.eliminated = true
 
     winner.winStreak += 1
-    if (winner.winStreak % 4 === 0) {
+    if (winner.winStreak === 4) {
       winner.pendingTimeBonuses.push(7)
-    } else if (winner.winStreak % 2 === 0) {
+    } else if (winner.winStreak === 2) {
       winner.pendingTimeBonuses.push(3)
     }
     if (loser.eliminated) {

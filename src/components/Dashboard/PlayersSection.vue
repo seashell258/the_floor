@@ -423,12 +423,14 @@ function handlePropClick(player: any): void {
   if (!player.prop) return
   if (player.prop === 'time') {
     gameStore.applyTimeProp(player.name, 3)
+    gameStore.consumeProp(player.name)
   } else {
     gameStore.consumeProp(player.name)
   }
 }
 
 function applyStreakReward(player: any, bonus: number): void {
+  if ((gameStore.state.timePropBonus[player.name] ?? 0) > 0) return
   gameStore.applyTimeProp(player.name, bonus)
   gameStore.consumePendingBonus(player.name, bonus)
 }
