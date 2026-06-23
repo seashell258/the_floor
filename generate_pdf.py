@@ -38,7 +38,9 @@ def calc_image_rect(
     img_w: float, img_h: float,
     available_w: float, available_h: float,
 ) -> tuple[float, float]:
-    raise NotImplementedError
+    """Return (draw_w, draw_h) scaled to fit within available bounds, aspect ratio preserved."""
+    scale = min(available_w / img_w, available_h / img_h)
+    return img_w * scale, img_h * scale
 
 
 def generate_pdf(

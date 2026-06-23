@@ -21,3 +21,26 @@ def test_find_image_finds_all_36():
 def test_find_image_raises_for_missing(tmp_path):
     with pytest.raises(FileNotFoundError, match="99"):
         find_image(99, tmp_path)
+
+
+def test_calc_image_rect_fits_within_bounds_wide_image():
+    draw_w, draw_h = calc_image_rect(1000, 500, 575, 660)
+    assert draw_w <= 575 + 0.001
+    assert draw_h <= 660 + 0.001
+
+
+def test_calc_image_rect_fits_within_bounds_tall_image():
+    draw_w, draw_h = calc_image_rect(200, 1000, 575, 660)
+    assert draw_w <= 575 + 0.001
+    assert draw_h <= 660 + 0.001
+
+
+def test_calc_image_rect_preserves_aspect_ratio():
+    draw_w, draw_h = calc_image_rect(400, 200, 575, 660)
+    assert abs(draw_w / draw_h - 2.0) < 0.001
+
+
+def test_calc_image_rect_uses_full_available_space():
+    draw_w, draw_h = calc_image_rect(575, 660, 575, 660)
+    assert abs(draw_w - 575) < 0.001
+    assert abs(draw_h - 660) < 0.001
