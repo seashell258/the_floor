@@ -82,11 +82,6 @@ interface VoteResult {
   voters2: string[]
 }
 
-interface DrawResult {
-  winner: string
-  reward: string | null
-}
-
 interface ChallengerResult {
   challenger: Player
 }
@@ -100,7 +95,6 @@ interface GameState {
     image: string
   } | null
   voteResults: VoteResult | null
-  drawResults: DrawResult | null
   eliminatedPlayers: string[] // 永久移除的玩家名稱
   wheelPlayerNames: string[] | null // null = 未初始化；[] = 全部抽完
   currentChallenger: ChallengerResult | null
@@ -129,7 +123,6 @@ export const useGameStore = defineStore('game', () => {
       voters1: [],
       voters2: []
     },
-    drawResults: null,
     eliminatedPlayers: [],
     wheelPlayerNames: null,
     currentChallenger: null,
@@ -149,7 +142,6 @@ export const useGameStore = defineStore('game', () => {
   const currentVoter = computed(() => state.value.currentVoter)
   const currentBattle = computed(() => state.value.currentBattle)
   const voteResults = computed(() => state.value.voteResults)
-  const drawResults = computed(() => state.value.drawResults)
   const activePlayers = computed(() => state.value.players.filter(p => !p.eliminated))
   const eliminatedPlayers = computed(() => state.value.eliminatedPlayers)
   const wheelPlayers = computed<Player[]>(() => {
@@ -220,13 +212,6 @@ export const useGameStore = defineStore('game', () => {
     } else if (playerChoice === 2 && !hasVotedFor2) {
       state.value.voteResults.votes2 += 1
       state.value.voteResults.voters2.push(voterName)
-    }
-  }
-
-  function recordDrawResult(winner: string, reward: string) {
-    state.value.drawResults = {
-      winner,
-      reward
     }
   }
 
@@ -602,7 +587,6 @@ export const useGameStore = defineStore('game', () => {
     currentVoter,
     currentBattle,
     voteResults,
-    drawResults,
     activePlayers,
     eliminatedPlayers,
     wheelPlayers,
@@ -621,7 +605,6 @@ export const useGameStore = defineStore('game', () => {
     endBattle,
     recordVote,
     applyProp,
-    recordDrawResult,
     resetVotes,
     permanentlyRemovePlayer,
     setChallenger,
