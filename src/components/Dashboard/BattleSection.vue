@@ -319,6 +319,7 @@ watch(battleWinner, (winner) => {
 
 function endBattle() {
   pendingWinnerName.value = gameStore.battleWinner ?? ''
+  hasSkippedOnce.value = false
   stopBattleMusic()
   gameStore.resetBattle()
   socket.emit('pushVoteState', {
