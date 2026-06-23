@@ -44,3 +44,14 @@ def test_calc_image_rect_uses_full_available_space():
     draw_w, draw_h = calc_image_rect(575, 660, 575, 660)
     assert abs(draw_w - 575) < 0.001
     assert abs(draw_h - 660) < 0.001
+
+
+def test_generate_pdf_creates_file_with_content(tmp_path):
+    out = tmp_path / "test.pdf"
+    generate_pdf(IMAGE_DIR, PLANTS[:3], out)
+    assert out.exists()
+    assert out.stat().st_size > 10_000  # at least 10 KB for 3 real image pages
+
+
+def test_plants_list_has_36_entries():
+    assert len(PLANTS) == 36

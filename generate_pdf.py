@@ -48,7 +48,45 @@ def generate_pdf(
     names: list[str],
     output_path: Path,
 ) -> None:
-    raise NotImplementedError
+    pdfmetrics.registerFont(UnicodeCIDFont(FONT_NAME))
+    c = canvas.Canvas(str(output_path), pagesize=(PAGE_W, PAGE_H))
+
+    avail_w = PAGE_W - 2 * PADDING
+    img_top_y = PAGE_H - PADDING
+    text_zone_top = PAGE_H - PADDING - MAX_IMG_H   # 172
+    text_zone_bottom = PADDING                      # 10
+    text_center_y = (text_zone_top + text_zone_bottom) / 2  # 91
+
+    for i, name in enumerate(names, start=1):
+        try:
+            img_path = find_image(i, image_dir)
+            with PILImage.open(img_path) as pil_img:
+                pil_img = pil_img.convert("RGB")
+                iw, ih = pil_img.size
+                buf = BytesIO()
+                pil_img.save(buf, format="JPEG", quality=95)
+                buf.seek(0)
+                img_reader = ImageReader(buf)
+        except FileNotFoundError as e:
+            c.setFont("Helvetica", 14)
+            c.setFillColorRGB(1, 0, 0)
+            c.drawCentredString(PAGE_W / 2, PAGE_H / 2, str(e))
+            c.showPage()
+            continue
+
+        draw_w, draw_h = calc_image_rect(iw, ih, avail_w, MAX_IMG_H)
+        img_x = PADDING + (avail_w - draw_w) / 2
+        img_y = img_top_y - draw_h
+
+        c.drawImage(img_reader, img_x, img_y, draw_w, draw_h)
+
+        c.setFont(FONT_NAME, TEXT_FONT_SIZE)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(PAGE_W / 2, text_center_y - TEXT_FONT_SIZE / 2, name)
+
+        c.showPage()
+
+    c.save()
 
 
 if __name__ == "__main__":
