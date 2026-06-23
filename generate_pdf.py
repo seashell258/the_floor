@@ -27,7 +27,11 @@ PLANTS = [
 
 
 def find_image(n: int, image_dir: Path) -> Path:
-    raise NotImplementedError
+    for ext in EXTENSIONS:
+        p = image_dir / f"{n}.{ext}"
+        if p.exists():
+            return p
+    raise FileNotFoundError(f"找不到第 {n} 張圖片（目錄：{image_dir}）")
 
 
 def calc_image_rect(
