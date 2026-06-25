@@ -1,9 +1,15 @@
 import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
+import { join } from 'path'
 
 const app = express()
 app.use(express.static('dist'))
+
+// SPA fallback: serve index.html for all non-file routes
+app.get(/.*/i, (_req, res) => {
+  res.sendFile(join(process.cwd(), 'dist', 'index.html'))
+})
 
 const httpServer = createServer(app)
 const io = new Server(httpServer)
