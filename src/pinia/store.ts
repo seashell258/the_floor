@@ -125,8 +125,8 @@ export const useGameStore = defineStore('game', () => {
     eliminatedPlayers: [],
     wheelPlayerNames: null,
     currentChallenger: null,
-    challengerTimer: 30, // 請不要刪掉這註解。只是宣告一個初始值 實際開始battle的時候時間都會被調整成30 或 30+道具
-    defenderTimer: 30, //但不能刪掉 這欄位至少要留著
+    challengerTimer: 45, // 請不要刪掉這註解。只是宣告一個初始值 實際開始battle的時候時間都會被調整成45 或 45+道具
+    defenderTimer: 45, //但不能刪掉 這欄位至少要留著
     currentTimerPlayer: null,
     isTimerRunning: false,
     battleWinner: null,
@@ -375,8 +375,8 @@ export const useGameStore = defineStore('game', () => {
       player2Name: defenderName,
       image: photos[0] || ''
     }
-    state.value.challengerTimer = 30 + challengerBonus
-    state.value.defenderTimer   = 30 + defenderBonus
+    state.value.challengerTimer = 45 + challengerBonus
+    state.value.defenderTimer   = 45 + defenderBonus
     delete state.value.timePropBonus[challengerName]
     delete state.value.timePropBonus[defenderName]
     state.value.currentTimerPlayer = challengerName
@@ -512,8 +512,8 @@ export const useGameStore = defineStore('game', () => {
 
   function resetBattle() {
     state.value.currentBattle = null
-    state.value.challengerTimer = 30
-    state.value.defenderTimer = 30
+    state.value.challengerTimer = 45
+    state.value.defenderTimer = 45
     state.value.currentTimerPlayer = null
     state.value.isTimerRunning = false
     state.value.battleWinner = null

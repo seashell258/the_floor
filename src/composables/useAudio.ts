@@ -240,10 +240,10 @@ export function playWinnerSFX() {
 
   // Bell partials: fundamental C3 + inharmonic overtones
   const partials = [
-    { freq: 65.4,          peak: 0.62, decay: 7.5 },  // C2 fundamental
-    { freq: 130.8,         peak: 0.28, decay: 5.0 },  // C3 octave — carries the body
-    { freq: 65.4 * 2.756,  peak: 0.14, decay: 2.8 },  // inharmonic
-    { freq: 65.4 * 5.404,  peak: 0.05, decay: 1.2 },  // inharmonic high
+    { freq: 65.4,          peak: 0.90, decay: 7.5 },  // C2 fundamental
+    { freq: 130.8,         peak: 0.42, decay: 5.0 },  // C3 octave — carries the body
+    { freq: 65.4 * 2.756,  peak: 0.22, decay: 2.8 },  // inharmonic
+    { freq: 65.4 * 5.404,  peak: 0.08, decay: 1.2 },  // inharmonic high
   ]
 
   partials.forEach(({ freq, peak, decay }) => {

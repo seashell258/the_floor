@@ -52,6 +52,25 @@
           </div>
         </div>
 
+        <Transition name="warning-fade">
+          <div v-if="showEndWarning" class="endgame-warning" :class="{ critical: isCritical }">
+            <div class="endgame-dots">
+              <span
+                v-for="i in 7"
+                :key="i"
+                class="endgame-dot"
+                :class="{ active: i <= remainingQuestions }"
+              />
+            </div>
+            <div class="endgame-ticker">
+              <span class="endgame-suffix">最後</span>
+              <span class="endgame-number" :key="remainingQuestions">{{ remainingQuestions }}</span>
+              <span class="endgame-suffix">題</span>
+            </div>
+            <div class="endgame-note">題目用完後 · 以<strong>剩餘秒數</strong>決勝</div>
+          </div>
+        </Transition>
+
         <div v-if="battleWinner && battleInfo && !showCeremony" class="result-panel">
           <div class="winner-announcement">
             <template v-if="isHostBattle">
@@ -282,6 +301,19 @@ function resolveByTimer() {
 const isNextDisabled = computed(
   () => selectedThemePhotos.value.length === 0 || showAnswer.value
 )
+
+const remainingQuestions = computed(() => {
+  const total = selectedThemePhotos.value.length
+  if (total === 0) return 0
+  return total - currentPhotoIndex.value
+})
+const showEndWarning = computed(() =>
+  remainingQuestions.value > 0 &&
+  remainingQuestions.value <= 7 &&
+  !!battleInfo.value &&
+  !battleWinner.value
+)
+const isCritical = computed(() => remainingQuestions.value <= 3)
 
 watch(battleInfo, (info) => {
   if (info) startBattleMusic()
@@ -843,5 +875,151 @@ onUnmounted(() => stopBattleMusic())
 .continue-btn.secondary:hover {
   color: var(--text);
   border-color: var(--glow);
+}
+
+/* Endgame warning */
+.endgame-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.55rem 1rem;
+  margin: 0.35rem 0;
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.endgame-warning::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--warn);
+  border-radius: 8px 0 0 8px;
+}
+
+.endgame-warning.critical {
+  background: rgba(255, 70, 85, 0.07);
+  border-color: rgba(255, 70, 85, 0.35);
+  animation: critical-pulse 1.2s ease-in-out infinite;
+}
+
+.endgame-warning.critical::before {
+  background: var(--danger);
+}
+
+@keyframes critical-pulse {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 16px rgba(255, 70, 85, 0.22), 0 0 32px rgba(255, 70, 85, 0.08); }
+}
+
+.endgame-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.endgame-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: transparent;
+  transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.endgame-dot.active {
+  background: var(--warn);
+  border-color: var(--warn);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.55);
+}
+
+.critical .endgame-dot {
+  border-color: rgba(255, 70, 85, 0.25);
+}
+
+.critical .endgame-dot.active {
+  background: var(--danger);
+  border-color: var(--danger);
+  box-shadow: 0 0 6px rgba(255, 70, 85, 0.55);
+}
+
+.endgame-ticker {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.endgame-suffix {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 0.78rem;
+  color: var(--warn);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.critical .endgame-suffix {
+  color: var(--danger);
+}
+
+.endgame-number {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--warn);
+  line-height: 1;
+  display: inline-block;
+  animation: endgame-pop 0.32s ease-out;
+}
+
+.critical .endgame-number {
+  color: var(--danger);
+}
+
+@keyframes endgame-pop {
+  0%   { transform: scale(1.5); opacity: 0.3; }
+  60%  { transform: scale(0.92); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.endgame-note {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 0.75rem;
+  color: rgba(245, 158, 11, 0.65);
+  letter-spacing: 0.03em;
+  flex: 1;
+}
+
+.endgame-note strong {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.critical .endgame-note {
+  color: rgba(255, 70, 85, 0.65);
+}
+
+.critical .endgame-note strong {
+  color: var(--danger);
+}
+
+/* Transition */
+.warning-fade-enter-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.warning-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.warning-fade-enter-from,
+.warning-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>

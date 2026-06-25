@@ -6,25 +6,16 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
-IMAGE_DIR = Path(__file__).parent / "台灣行道樹＆園藝植物"
-OUTPUT_PATH = Path(__file__).parent / "台灣行道樹＆園藝植物.pdf"
-PAGE_W, PAGE_H = 595, 842
+IMAGE_DIR = Path(__file__).parent / "美食"
+OUTPUT_PATH = Path(__file__).parent / "食物.pdf"
+PAGE_W, PAGE_H = 595, 802
 PADDING = 10
-MAX_IMG_H = 660
+MAX_IMG_H = 680
 TEXT_FONT_SIZE = 28
 FONT_NAME = "STSong-Light"
 EXTENSIONS = ["jpg", "jpeg", "JPG", "JPEG", "avif", "png", "PNG", "webp", "WEBP"]
 
-PLANTS = [
-    "榕樹", "虎尾蘭", "茄苳", "唐竹", "阿勃勒",
-    "班葉鵝掌藤", "臺灣欒樹", "黑松", "雪茄花", "樟樹",
-    "琴葉榕", "重陽木", "蒲葵", "苦楝", "天堂鳥",
-    "九芎", "日本女貞", "臺灣櫸（雞油）", "龜背芋", "白千層",
-    "厚葉石斑木", "山櫻花（緋寒櫻）", "百合竹", "楓香", "五爪木",
-    "水黃皮", "蘭嶼肉桂", "光臘樹", "臺北海桐", "黃槿",
-    "印度橡膠樹", "青楓", "竹柏", "朴樹", "白水木", "瓊崖海棠",
-]
-
+PLANTS = ['墨西哥 taco','duck confit 油封鴨','可樂餅','千層麵','威靈頓牛排','千層酥','牛舌','避風塘炒蟹','戰斧牛排','火山排骨','芋頭飯  / 芋仔籤(? 不是 但這題比較困難 字有擦到就給過        ( tricky','大阪燒','土耳其烤肉 或 沙威馬(中東版本) 但也給過','班尼迪克蛋','千層蛋糕','北京烤鴨','千層麵','烤乳豬','德國豬腳','烤火雞','炸魚薯條','閃電泡芙','吉拿棒','章魚燒','墨西哥玉米片','法國麵包','鳳梨酥','糖葫蘆串','粽子','關東煮']
 
 def find_image(n: int, image_dir: Path) -> Path:
     for ext in EXTENSIONS:

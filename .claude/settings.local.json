@@ -5,7 +5,21 @@
       "Bash(findstr /i \"test\\\\|vitest\\\\|jest\")",
       "Bash(npx vue-tsc *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "mcp__canva__search-folders",
+      "mcp__canva__list-folder-items",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\User\\\\Desktop\\\\the_cat_floor\\\\台灣行道樹＆園藝植物\" | Select-Object Name | Sort-Object { [int]\\($_.Name -replace '\\\\D',''\\) })",
+      "PowerShell(python -m http.server 8765 --directory \"C:\\\\Users\\\\User\\\\Desktop\\\\the_cat_floor\\\\台灣行道樹＆園藝植物\")",
+      "PowerShell(Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest \"http://localhost:8765/1.jpg\" -Method Head -TimeoutSec 3 -ErrorAction Stop; \"OK: $\\($r.StatusCode\\)\" } catch { \"Error: $_\" })",
+      "PowerShell(Start-Sleep -Seconds 2; \\(Invoke-WebRequest \"http://localhost:8765/1.jpg\" -Method Head -TimeoutSec 5 -UseBasicParsing\\).StatusCode)",
+      "mcp__canva__upload-asset-from-url",
+      "PowerShell(Get-Command *)",
+      "mcp__canva__generate-design",
+      "mcp__canva__create-design-from-candidate",
+      "mcp__canva__start-editing-transaction",
+      "mcp__canva__perform-editing-operations",
+      "mcp__canva__commit-editing-transaction",
+      "mcp__canva__export-design"
     ]
   }
 }

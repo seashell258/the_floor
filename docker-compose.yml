@@ -1,7 +1,11 @@
 # docker compose up -d
 
+#  幫我用venv理環境執行generate_pdf.py
+
  #(或用 docker ps 找到真正的名字)
  # docker exec --user seashell -it the_cat_floor bash -lc "claude --dangerously-skip-permissions"
+
+
 # docker exec --user seashell -it the_cat_floor bash 
 
 # claude --dangerously-skip-permissions 
