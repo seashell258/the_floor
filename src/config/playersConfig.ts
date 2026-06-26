@@ -29,7 +29,7 @@ export interface HostThemeConfig {
 }
 
 export const hostConfig: HostThemeConfig[] = [
-    { name: '角落生物', photos: generatePhotoPaths('主持人', '角落生物', 48), answers: ['答案1', '答案2'], isActivated: true },
+    { name: '角落生物', photos: generatePhotoPaths('主持人', '角落生物', 18), answers: ['白熊','企鵝?','貓','蜥蜴','炸蝦尾','粉圓','裹布','偽蝸牛','麻雀','幽靈','蜥蜴的母親','狗','蘑菇','例子','炸豬排國王','飛碟','炸豬排','黑色粉圓'], isActivated: true },
     { name: '動漫角色猜日本聲優',     photos: generatePhotoPaths('主持人', '動漫角色猜日本聲優',     30), answers: [
     "孫悟空 野沢雅子",
     "蒙奇·D·魯夫 田中真弓",
@@ -94,8 +94,27 @@ export const hostConfig: HostThemeConfig[] = [
     "Boardwalk Empire 海濱帝國",
     "American Horror Story 美國恐怖故事"
 ],          isActivated: true },
-    { name: '運動',     photos: generatePhotoPaths('主持人', '運動',     38), answers: [],          isActivated: true }
+    { name: '測試用',     photos: generatePhotoPaths('主持人', '測試用',     38), answers: [], isActivated: true },
+{ name: '飢餓遊戲角色',     photos: generatePhotoPaths('主持人', '飢餓遊戲角色',14), answers: [  "Katniss Everdeen 凱妮絲・艾佛丁",
+  "Peeta Mellark 比德・梅爾拉克",
+  "Gale Hawthorne 蓋爾・霍桑",
+  "Effie Trinket 艾菲・純克",
+  "Haymitch Abernathy 黑密契・亞伯納西",
+  "President Snow 史諾總統",
+  "Plutarch Heavensbee 普魯塔克・希文斯比",
+  "Caesar Flickerman 凱薩・弗利克曼",
+  "Primrose Everdeen 波麗姆・艾佛丁（Prim）",
+  "Finnick Odair 芬尼克・歐戴爾",
+  "Johanna Mason 喬安娜・梅森",
+  "Alma Coin 艾瑪・柯茵",
+  "Cinna 秦納",
+  "Rue 小芸"
+], isActivated: true },
+{ name: '食材',                 photos: generatePhotoPaths('主持人', '食材',                 30), answers: ["茭白筍","龍鬚菜","山蘇","過貓（蕨菜）","大白菜","青江菜","香菇","金針菇","豬五花","雞腿肉","豬絞肉","牛腩","豬梅花肉","雞翅","虱目魚","透抽","蛤蜊","牡蠣","白蝦","花枝","板豆腐","豆干","油豆腐","嫩豆腐","米粉","地瓜","芋頭","冬粉","九層塔","薑"], isConsumed: false, isActivated: true },
+,{ name: '廚具',                 photos: generatePhotoPaths('主持人', '廚具',                 30), answers: ["主廚刀","麵包刀","削皮刀","砧板","剪刀","炒鍋","湯鍋","平底鍋","蒸鍋","壓力鍋","烤盤","鑄鐵鍋","量杯","量匙","料理秤","溫度計","電動打蛋器","橡皮刮刀","木匙","夾子","漏杓","篩網／濾網","研磨缽","電鍋","果汁機／調理機","微波爐","氣炸鍋","烤箱","擀麵棍","開罐器"], isConsumed: false, isActivated: true },
+           
 ]
+
 
 export const playersConfig: PlayerConfig[] = [
     {
@@ -105,6 +124,7 @@ export const playersConfig: PlayerConfig[] = [
             { name: '後宮甄嬛傳臺詞',       photos: generatePhotoPaths('李怡臻', '後宮甄嬛傳臺詞',       32), answers: ['情愛與時光','賤人就是矯情','做不到','驚喜','駕崩','也不該拿別人的血來暖自己','苦杏仁','暖暖','看戲','提鞋','會咬人的狗','榮華富貴','氣度，本事','亮光','掛記','人能容你','出人頭地','變成啞巴','鬆口氣','昭告天下','好東西','好生熱鬧','心有餘而力不足','筋疲力盡','等死','新鮮','去死','福氣','你在做什麼','皇后娘娘','到頭','笑不出來'],          isConsumed: false, isActivated: true },
             { name: '彩妝',                 photos: generatePhotoPaths('李怡臻', '彩妝',                 30), answers: ['口紅（唇膏）','粉餅','眼影盤','腮紅','美妝蛋','唇釉','粉底液','睫毛膏','修容盤','海綿','唇蜜','粉底棒','眉筆','打亮','睫毛夾','護唇膏','粉餅','假睫毛','Bronzer','粉撲','唇膜','遮瑕膏','雙眼皮貼','粉撲','唇部打底','妝前乳','眼皮打底','捲翹器','唇線筆','修眉刀'],          isConsumed: false, isActivated: true },
             { name: '食物',                 photos: generatePhotoPaths('李怡臻', '食物',                 30), answers: ['墨西哥 taco','duck confit 油封鴨','可樂餅','千層麵','威靈頓牛排','千層酥','牛舌','避風塘炒蟹','戰斧牛排','火山排骨','芋頭飯  / 芋仔籤','大阪燒','土耳其烤肉 或 沙威馬','班尼迪克蛋','千層蛋糕','北京烤鴨','千層麵','烤乳豬','德國豬腳','烤火雞','炸魚薯條','閃電泡芙','吉拿棒','章魚燒','墨西哥玉米片','法國麵包','鳳梨酥','糖葫蘆串','粽子','關東煮'],          isConsumed: false, isActivated: false }
+       
         ]
     },
     {

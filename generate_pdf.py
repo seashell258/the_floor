@@ -6,8 +6,8 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
-IMAGE_DIR = Path(__file__).parent / "美食"
-OUTPUT_PATH = Path(__file__).parent / "食物.pdf"
+IMAGE_DIR = Path(__file__).parent / "飢餓遊戲角色"
+OUTPUT_PATH = Path(__file__).parent / "飢餓遊戲角色.pdf"
 PAGE_W, PAGE_H = 595, 802
 PADDING = 10
 MAX_IMG_H = 680
@@ -15,8 +15,21 @@ TEXT_FONT_SIZE = 28
 FONT_NAME = "STSong-Light"
 EXTENSIONS = ["jpg", "jpeg", "JPG", "JPEG", "avif", "png", "PNG", "webp", "WEBP"]
 
-PLANTS = ['墨西哥 taco','duck confit 油封鴨','可樂餅','千層麵','威靈頓牛排','千層酥','牛舌','避風塘炒蟹','戰斧牛排','火山排骨','芋頭飯  / 芋仔籤(? 不是 但這題比較困難 字有擦到就給過        ( tricky','大阪燒','土耳其烤肉 或 沙威馬(中東版本) 但也給過','班尼迪克蛋','千層蛋糕','北京烤鴨','千層麵','烤乳豬','德國豬腳','烤火雞','炸魚薯條','閃電泡芙','吉拿棒','章魚燒','墨西哥玉米片','法國麵包','鳳梨酥','糖葫蘆串','粽子','關東煮']
-
+PLANTS = [  "Katniss Everdeen 凱妮絲・艾佛丁",
+  "Peeta Mellark 比德・梅爾拉克",
+  "Gale Hawthorne 蓋爾・霍桑",
+  "Effie Trinket 艾菲・純克",
+  "Haymitch Abernathy 黑密契・亞伯納西",
+  "President Snow 史諾總統",
+  "Plutarch Heavensbee 普魯塔克・希文斯比",
+  "Caesar Flickerman 凱薩・弗利克曼",
+  "Primrose Everdeen 波麗姆・艾佛丁（Prim）",
+  "Finnick Odair 芬尼克・歐戴爾",
+  "Johanna Mason 喬安娜・梅森",
+  "Alma Coin 艾瑪・柯茵",
+  "Cinna 秦納",
+  "Rue 露"
+]
 def find_image(n: int, image_dir: Path) -> Path:
     for ext in EXTENSIONS:
         p = image_dir / f"{n}.{ext}"
