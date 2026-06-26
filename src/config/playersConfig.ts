@@ -94,7 +94,7 @@ export const hostConfig: HostThemeConfig[] = [
     "Boardwalk Empire 海濱帝國",
     "American Horror Story 美國恐怖故事"
 ],          isActivated: true },
-    { name: '測試用',     photos: generatePhotoPaths('主持人', '測試用',     38), answers: [], isActivated: true },
+    
 { name: '飢餓遊戲角色',     photos: generatePhotoPaths('主持人', '飢餓遊戲角色',14), answers: [  "Katniss Everdeen 凱妮絲・艾佛丁",
   "Peeta Mellark 比德・梅爾拉克",
   "Gale Hawthorne 蓋爾・霍桑",
