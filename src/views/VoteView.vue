@@ -100,9 +100,15 @@
                 <h4>{{ player.name }}</h4>
                 <p class="player-meta">剩餘命數：{{ player.themeStack.items.filter((t: any) => !t.isConsumed).length }}</p>
               </div>
-              <div class="player-badge">
-                <span>連勝</span>
-                <strong>{{ player.winStreak }}</strong>
+              <div class="badges-col">
+                <div class="player-badge">
+                  <span>連勝</span>
+                  <strong>{{ player.winStreak }}</strong>
+                </div>
+                <div class="correct-badge">
+                  <span>預測命中</span>
+                  <strong>{{ player.correct }} 次</strong>
+                </div>
               </div>
             </div>
 
@@ -206,6 +212,16 @@
           </div>
         </div>
       </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showProphecy" class="prophecy-overlay" @click.self="showProphecy = false">
+        <div class="prophecy-dialog">
+          <div class="prophecy-title">你是大預言家！</div>
+          <div class="prophecy-body">呼叫主持人來提前回答續命題吧</div>
+          <button class="prophecy-close" @click="showProphecy = false">收到</button>
+        </div>
+      </div>
     </Teleport>
   </div>
 </template>
@@ -1131,5 +1147,100 @@ function getVotePercentage(playerNum: number): number {
 .settlement-fade-enter-from,
 .settlement-fade-leave-to {
   opacity: 0;
+}
+
+/* ── 大預言家 modal ── */
+.prophecy-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prophecy-dialog {
+  background: var(--bg-panel);
+  border: 1px solid var(--glow);
+  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 0 40px var(--glow-30);
+  animation: fade-slide-up 0.35s ease-out;
+}
+
+.prophecy-title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--glow);
+  text-shadow: 0 0 16px var(--glow-30);
+}
+
+.prophecy-body {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.prophecy-close {
+  margin-top: 0.5rem;
+  padding: 0.7rem 1.5rem;
+  background: var(--glow);
+  color: var(--bg-panel);
+  border: none;
+  border-radius: 8px;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.prophecy-close:hover {
+  background: var(--glow-bright);
+}
+
+@keyframes fade-slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Player badges column ── */
+.badges-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-end;
+}
+
+.correct-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0.4rem 0.7rem;
+  background: rgba(25, 233, 255, 0.07);
+  border-radius: 999px;
+  border: 1px solid rgba(25, 233, 255, 0.15);
+}
+
+.correct-badge span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.correct-badge strong {
+  color: var(--glow);
+  font-size: 0.95rem;
+  font-family: 'Chakra Petch', sans-serif;
 }
 </style>
