@@ -25,7 +25,7 @@
 
         <div v-if="gameStore.currentBattle" class="vote-timer" :class="{ urgent: voteSecondsLeft <= 3 && voteOpen, closed: !voteOpen }">
           <div class="vote-timer-track">
-            <div class="vote-timer-fill" :style="{ width: (voteSecondsLeft / 7 * 100) + '%' }"></div>
+            <div class="vote-timer-fill" :style="{ width: (voteSecondsLeft / 10 * 100) + '%' }"></div>
           </div>
           <div class="vote-timer-display">
             <template v-if="voteOpen">
@@ -189,6 +189,24 @@
         </div>
       </Transition>
     </Teleport>
+
+    <Teleport to="body">
+      <Transition name="settlement-fade">
+        <div
+          v-if="showSettlement"
+          class="settlement-overlay"
+          :class="settlementCorrect ? 'settlement-correct' : 'settlement-wrong'"
+        >
+          <div class="settlement-content">
+            <div class="settlement-verdict">{{ settlementCorrect ? '猜對了！' : '猜錯了' }}</div>
+            <div class="settlement-winner">{{ settlementWinnerName }} 勝利</div>
+            <div v-if="settlementCorrect" class="settlement-count">
+              總計投對 {{ currentVoterCorrect }} 次
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -204,7 +222,46 @@ const activeTab = ref<'vote' | 'status'>('vote')
 const hostPanelOpen = ref(false)
 const hostAvailableCount = computed(() => gameStore.hostThemes.filter(t => !t.isConsumed).length)
 
-const VOTE_WINDOW_MS = 7000
+const showSettlement = ref(false)
+const settlementCorrect = ref(false)
+const settlementWinnerName = ref('')
+const showProphecy = ref(false)
+const prophesyShown = ref(false)
+let settlementTimer: number | null = null
+
+const currentVoterCorrect = computed(() => {
+  const name = gameStore.currentVoter?.name
+  return name ? (gameStore.players.find(p => p.name === name)?.correct ?? 0) : 0
+})
+
+function checkProphecy() {
+  if (prophesyShown.value) return
+  if (currentVoterCorrect.value === 5) {
+    showProphecy.value = true
+    prophesyShown.value = true
+  }
+}
+
+watch(() => gameStore.battleWinner, (winner) => {
+  if (!winner || !gameStore.currentBattle) return
+  if (!hasVoted.value) return
+  if (settlementTimer !== null) { clearTimeout(settlementTimer); settlementTimer = null }
+
+  const myVote = hasVotedFor(1) ? 1 : 2
+  settlementCorrect.value =
+    (myVote === 1 && winner === gameStore.currentBattle.player1Name) ||
+    (myVote === 2 && winner === gameStore.currentBattle.player2Name)
+  settlementWinnerName.value = winner
+  showSettlement.value = true
+
+  settlementTimer = window.setTimeout(() => {
+    showSettlement.value = false
+    settlementTimer = null
+    checkProphecy()
+  }, 4000)
+})
+
+const VOTE_WINDOW_MS = 10000
 const now = ref(Date.now())
 let countdownInterval: number | null = null
 
@@ -217,6 +274,8 @@ watch(() => gameStore.currentBattle, (battle) => {
         countdownInterval = null
       }
     }, 200)
+    showSettlement.value = false
+    if (settlementTimer !== null) { clearTimeout(settlementTimer); settlementTimer = null }
   } else {
     if (countdownInterval !== null) {
       clearInterval(countdownInterval)
@@ -227,6 +286,7 @@ watch(() => gameStore.currentBattle, (battle) => {
 
 onUnmounted(() => {
   if (countdownInterval !== null) clearInterval(countdownInterval)
+  if (settlementTimer !== null) clearTimeout(settlementTimer)
 })
 
 const voteSecondsLeft = computed(() => {
@@ -997,5 +1057,79 @@ function getVotePercentage(playerNum: number): number {
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ── Settlement overlay ── */
+.settlement-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.settlement-correct {
+  background: rgba(0, 13, 43, 0.92);
+  border-top: 3px solid var(--glow);
+  box-shadow: inset 0 0 60px rgba(25, 233, 255, 0.08);
+}
+
+.settlement-wrong {
+  background: rgba(20, 0, 0, 0.92);
+  border-top: 3px solid var(--danger);
+  box-shadow: inset 0 0 60px rgba(255, 70, 85, 0.08);
+}
+
+.settlement-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.settlement-verdict {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(3rem, 15vw, 5rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.settlement-correct .settlement-verdict {
+  color: var(--glow);
+  text-shadow: 0 0 30px var(--glow), 0 0 60px rgba(25, 233, 255, 0.3);
+}
+
+.settlement-wrong .settlement-verdict {
+  color: var(--danger);
+  text-shadow: 0 0 30px var(--danger);
+}
+
+.settlement-winner {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.settlement-count {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1rem;
+  color: var(--glow);
+  opacity: 0.75;
+  letter-spacing: 0.06em;
+}
+
+.settlement-fade-enter-active {
+  transition: opacity 0.3s ease;
+}
+.settlement-fade-leave-active {
+  transition: opacity 0.6s ease;
+}
+.settlement-fade-enter-from,
+.settlement-fade-leave-to {
+  opacity: 0;
 }
 </style>
