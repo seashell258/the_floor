@@ -382,8 +382,8 @@ export const useGameStore = defineStore('game', () => {
       player2Name: defenderName,
       image: photos[0] || ''
     }
-    state.value.challengerTimer = 12 + challengerBonus
-    state.value.defenderTimer   = 12 + defenderBonus
+    state.value.challengerTimer = 45 + challengerBonus
+    state.value.defenderTimer   = 45 + defenderBonus
     delete state.value.timePropBonus[challengerName]
     delete state.value.timePropBonus[defenderName]
     state.value.currentTimerPlayer = challengerName
