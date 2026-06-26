@@ -336,6 +336,7 @@ watch(battleWinner, (winner) => {
       eliminated: p.eliminated,
       winStreak: p.winStreak,
       prop: p.prop,
+      correct: p.correct,
       themeItems: p.themeStack.items.map(t => ({
         name: t.name,
         isConsumed: t.isConsumed,
@@ -364,6 +365,7 @@ function endBattle() {
       eliminated: p.eliminated,
       winStreak: p.winStreak,
       prop: p.prop,
+      correct: p.correct,
       themeItems: p.themeStack.items.map(t => ({
         name: t.name,
         isConsumed: t.isConsumed,
