@@ -410,6 +410,17 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  function incrementCorrectVoters(winnerName: string): void {
+    const battle = state.value.currentBattle
+    const vr = state.value.voteResults
+    if (!battle || !vr) return
+    const correctVoters = winnerName === battle.player1Name ? vr.voters1 : vr.voters2
+    for (const voterName of correctVoters) {
+      const player = state.value.players.find(p => p.name === voterName)
+      if (player) player.correct += 1
+    }
+  }
+
   function processBattleResult(winnerName: string) {
     const battle = state.value.currentBattle
     if (!battle || state.value.battleWinner) return
@@ -422,6 +433,7 @@ export const useGameStore = defineStore('game', () => {
       // Host battle: consume the host's current active theme regardless of outcome
       const activeHostTheme = state.value.hostThemes.find(t => !t.isConsumed)
       if (activeHostTheme) activeHostTheme.isConsumed = true
+      incrementCorrectVoters(winnerName)
       state.value.battleWinner = winnerName
       return
     }
@@ -465,6 +477,7 @@ export const useGameStore = defineStore('game', () => {
 
     loser.winStreak = 0
     loser.pendingTimeBonuses = []
+    incrementCorrectVoters(winnerName)
     state.value.battleWinner = winnerName
   }
 
@@ -531,6 +544,7 @@ export const useGameStore = defineStore('game', () => {
       eliminated: boolean
       winStreak: number
       prop: 'time' | 'shield' | null
+      correct?: number
       themeItems: Array<{ name: string; isConsumed: boolean; isActivated: boolean }>
     }> | null
     hostThemesSnapshot?: Array<{
@@ -551,6 +565,7 @@ export const useGameStore = defineStore('game', () => {
           player.eliminated = snap.eliminated
           player.winStreak = snap.winStreak
           player.prop = snap.prop
+          if (snap.correct !== undefined) player.correct = snap.correct
           // Sync theme flags by name; preserve existing photos/answers.
           // If a theme is new (winner gained loser's theme), push it with empty media —
           // vote page only renders theme names, so empty photos/answers are fine there.
@@ -632,6 +647,7 @@ export const useGameStore = defineStore('game', () => {
     consumeProp,
     applyTimeProp,
     consumePendingBonus,
-    applyVoteState
+    applyVoteState,
+    incrementCorrectVoters
   }
 })
