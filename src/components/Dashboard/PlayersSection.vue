@@ -11,7 +11,8 @@
           'streak-ready': player.pendingTimeBonuses.length > 0,
           'battle-ready': !!gameStore.currentChallenger && !player.eliminated && !!topAvailableTheme(player) && !isCurrentChallenger(player) && immunePlayerName !== player.name,
           'is-self-challenger': isCurrentChallenger(player),
-          'is-immune': immunePlayerName === player.name
+          'is-immune': immunePlayerName === player.name,
+          'revival-unlock-card': unlockedKey.startsWith(player.name + ':')
         }"
         @click="handleCardClick(player)"
       >
@@ -63,7 +64,7 @@
             </span>
           </div>
         </div>
-        <div v-else-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme" :class="{ 'primary-theme--captured': topAvailableTheme(player)?.capturedFrom }">
+        <div v-else-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme" :class="{ 'primary-theme--captured': topAvailableTheme(player)?.capturedFrom, 'just-unlocked': unlockedKey === `${player.name}:${topAvailableTheme(player)?.name}` }">
           <div class="primary-eyebrow">
             <span class="primary-label">決鬥主題</span>
             <Swords :size="11" class="primary-icon" />
@@ -79,12 +80,12 @@
         </div>
 
         <!-- ── Secondary themes ── -->
-        <div v-if="secondaryThemes(player).length > 0" class="secondary-themes" @click.stop>
+        <div v-if="secondaryThemes(player).length > 0" class="secondary-themes" :class="{ 'has-unlock': secondaryThemes(player).some(t => unlockedKey === `${player.name}:${t.name}`) }" @click.stop>
           <div
             v-for="theme in secondaryThemes(player)"
             :key="theme.name"
             class="theme-pill"
-            :class="[themeClass(theme, player.name), { captured: theme.capturedFrom }]"
+            :class="[themeClass(theme, player.name), { captured: theme.capturedFrom, 'just-unlocked': unlockedKey === `${player.name}:${theme.name}` }]"
             @click.stop="handleThemeClick(player, theme)"
           >
             <span v-if="theme.capturedFrom" class="capture-sword-pill">⚔</span>
@@ -271,7 +272,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { useGameStore } from '../../pinia/store'
 import { getThemeClass } from '../../utils/themeUtils'
 import { Swords, Unlock, Clock, Shield, X } from 'lucide-vue-next'
@@ -340,9 +341,24 @@ const vsLeftName = computed(() =>
   isHostBattle.value ? pendingHostChallengerName.value : (gameStore.currentChallenger?.challenger.name ?? '')
 )
 
+// ─── Revival unlock animation ───
+const unlockedKey = ref('')
+let unlockTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(() => gameStore.justUnlockedTheme, (val) => {
+  if (!val) return
+  if (unlockTimer) clearTimeout(unlockTimer)
+  unlockedKey.value = `${val.playerName}:${val.themeName}`
+  unlockTimer = setTimeout(() => {
+    unlockedKey.value = ''
+    unlockTimer = null
+  }, 2200)
+})
+
 onUnmounted(() => {
   if (vsAutoTimer) clearTimeout(vsAutoTimer)
   if (countdownInterval) clearInterval(countdownInterval)
+  if (unlockTimer) clearTimeout(unlockTimer)
 })
 
 function openVsScreen(player: any, theme: any) {
@@ -1823,5 +1839,53 @@ function handleStartDuel() {
 @keyframes shield-fade-up {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Revival Unlock Animation ─── */
+
+.player-card.revival-unlock-card {
+  animation: revival-card-pulse 2.2s ease-out forwards;
+}
+
+@keyframes revival-card-pulse {
+  0%   { border-color: rgba(255, 220, 80, 0.9);  box-shadow: 0 0 0 2px rgba(255, 220, 80, 0.4), 0 0 40px rgba(255, 220, 80, 0.22); }
+  45%  { border-color: rgba(255, 220, 80, 0.45); box-shadow: 0 0 0 1px rgba(255, 220, 80, 0.15), 0 0 20px rgba(255, 220, 80, 0.1); }
+  100% { border-color: var(--glow-30);           box-shadow: none; }
+}
+
+/* Unlock animates in regardless of whether it appears as primary zone or secondary pill */
+.primary-theme.just-unlocked,
+.theme-pill.just-unlocked {
+  animation: revival-slam 1.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes revival-slam {
+  0% {
+    transform: scale(0.28) translateY(10px);
+    opacity: 0;
+    filter: blur(16px);
+    box-shadow: none;
+  }
+  30% {
+    transform: scale(1.1) translateY(0);
+    opacity: 1;
+    filter: blur(0);
+    box-shadow: 0 0 36px rgba(255, 220, 80, 0.75), 0 0 70px rgba(255, 220, 80, 0.28);
+  }
+  62% {
+    transform: scale(0.97);
+    box-shadow: 0 0 18px rgba(255, 220, 80, 0.35);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0);
+    box-shadow: none;
+  }
+}
+
+/* Force secondary-themes visible so the glow isn't opacity-crushed during animation */
+.secondary-themes.has-unlock {
+  opacity: 1;
 }
 </style>

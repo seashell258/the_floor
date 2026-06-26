@@ -75,7 +75,7 @@
           <div class="winner-announcement">
             <template v-if="isHostBattle">
               <template v-if="battleWinner === '主持人'">主持人勝利，{{ hostBattlePlayerName }}解鎖失敗</template>
-              <template v-else>{{ hostBattlePlayerName }}勝利，解鎖多一個主題!</template>
+              <template v-else>{{ hostBattlePlayerName }}勝利，多解鎖一個可用主題!</template>
             </template>
             <template v-else>{{ battleWinner }} 勝利！</template>
           </div>
@@ -357,10 +357,17 @@ watch(battleWinner, (winner) => {
 })
 
 function endBattle() {
-  pendingWinnerName.value = gameStore.battleWinner ?? ''
+  const winnerName = gameStore.battleWinner ?? ''
+  pendingWinnerName.value = winnerName
   hasSkippedOnce.value = false
   stopBattleMusic()
   const wasHostBattle = isHostBattle.value
+
+  // Auto-unlock revival theme: player beat the host, no manual step needed
+  if (wasHostBattle && winnerName && winnerName !== '主持人') {
+    gameStore.activateRevivalTheme(winnerName)
+  }
+
   gameStore.resetBattle()
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,

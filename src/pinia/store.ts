@@ -110,6 +110,9 @@ interface GameState {
 }
 
 export const useGameStore = defineStore('game', () => {
+  // Transient UI signal — not part of serialised game state
+  const justUnlockedTheme = ref<{ playerName: string; themeName: string } | null>(null)
+
   // State
   const state = ref<GameState>({
     currentVoter: null,
@@ -313,7 +316,10 @@ export const useGameStore = defineStore('game', () => {
     const player = state.value.players.find(p => p.name === playerName)
     if (!player) return
     const revivalTheme = player.themeStack.items.find(t => !t.isActivated)
-    if (revivalTheme) revivalTheme.isActivated = true
+    if (revivalTheme) {
+      revivalTheme.isActivated = true
+      justUnlockedTheme.value = { playerName, themeName: revivalTheme.name }
+    }
   }
 
   function consumeProp(playerName: string): void {
@@ -657,6 +663,7 @@ export const useGameStore = defineStore('game', () => {
     hostThemes,
     selectableThemeKeys,
     activateRevivalTheme,
+    justUnlockedTheme,
     consumeProp,
     applyTimeProp,
     consumePendingBonus,
