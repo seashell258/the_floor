@@ -12,6 +12,7 @@ export interface ThemeData {
   answers: string[] // 答案
   isConsumed: boolean // 已使用/消耗的主題
   isActivated: boolean
+  capturedFrom?: string // 從哪位玩家奪取來的
 }
 
 // Theme Stack类 - 存储ThemeData对象
@@ -47,7 +48,7 @@ export class ThemeStack {
   }
 
   activeLives(): number {
-    return this.items.filter(t => !t.isConsumed).length
+    return this.items.filter(t => !t.isConsumed && t.isActivated).length
   }
 
   peekActive(): ThemeData | undefined {
@@ -375,8 +376,8 @@ export const useGameStore = defineStore('game', () => {
       player2Name: defenderName,
       image: photos[0] || ''
     }
-    state.value.challengerTimer = 45 + challengerBonus
-    state.value.defenderTimer   = 45 + defenderBonus
+    state.value.challengerTimer = 12 + challengerBonus
+    state.value.defenderTimer   = 12 + defenderBonus
     delete state.value.timePropBonus[challengerName]
     delete state.value.timePropBonus[defenderName]
     state.value.currentTimerPlayer = challengerName
@@ -430,9 +431,9 @@ export const useGameStore = defineStore('game', () => {
     const isHostInvolved = player1Name === '主持人' || player2Name === '主持人'
 
     if (isHostInvolved) {
-      // Host battle: consume the host's current active theme regardless of outcome
-      const activeHostTheme = state.value.hostThemes.find(t => !t.isConsumed)
-      if (activeHostTheme) activeHostTheme.isConsumed = true
+      if (state.value.hostCurrentTheme) {
+        state.value.hostCurrentTheme.isConsumed = true
+      }
       incrementCorrectVoters(winnerName)
       state.value.battleWinner = winnerName
       return
@@ -456,7 +457,7 @@ export const useGameStore = defineStore('game', () => {
       if (defenderTopTheme) defenderTopTheme.isConsumed = true
       if (challengerTopTheme) {
         challengerTopTheme.isConsumed = true
-        winner.themeStack.push({ ...challengerTopTheme, isConsumed: false })
+        winner.themeStack.items.unshift({ ...challengerTopTheme, isConsumed: false, capturedFrom: loserName })
       }
     } else {
       const defenderTopTheme = defender.themeStack.peekActive()
@@ -545,7 +546,7 @@ export const useGameStore = defineStore('game', () => {
       winStreak: number
       prop: 'time' | 'shield' | null
       correct?: number
-      themeItems: Array<{ name: string; isConsumed: boolean; isActivated: boolean }>
+      themeItems: Array<{ name: string; isConsumed: boolean; isActivated: boolean; capturedFrom?: string }>
     }> | null
     hostThemesSnapshot?: Array<{
       name: string
@@ -574,13 +575,15 @@ export const useGameStore = defineStore('game', () => {
             if (existing) {
               existing.isConsumed = snapTheme.isConsumed
               existing.isActivated = snapTheme.isActivated
+              if (snapTheme.capturedFrom !== undefined) existing.capturedFrom = snapTheme.capturedFrom
             } else {
               player.themeStack.items.push({
                 name: snapTheme.name,
                 photos: [],
                 answers: [],
                 isConsumed: snapTheme.isConsumed,
-                isActivated: snapTheme.isActivated
+                isActivated: snapTheme.isActivated,
+                capturedFrom: snapTheme.capturedFrom
               })
             }
           }
@@ -590,7 +593,17 @@ export const useGameStore = defineStore('game', () => {
       if (incoming.hostThemesSnapshot) {
         for (const snap of incoming.hostThemesSnapshot) {
           const theme = state.value.hostThemes.find(t => t.name === snap.name)
-          if (theme) theme.isConsumed = snap.isConsumed
+          if (theme) {
+            theme.isConsumed = snap.isConsumed
+          } else {
+            state.value.hostThemes.push({
+              name: snap.name,
+              photos: [],
+              answers: [],
+              isConsumed: snap.isConsumed,
+              isActivated: true
+            })
+          }
         }
       }
     }

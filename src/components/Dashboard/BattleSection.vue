@@ -85,6 +85,10 @@
               的第一順位主題已消耗
             </span>
           </div>
+          <div v-if="isHostBattle" class="host-remaining">
+            <span v-for="t in gameStore.hostThemes" :key="t.name" class="host-remaining-dot" :class="{ consumed: t.isConsumed }" :title="t.name" />
+            <span class="host-remaining-label">剩 {{ hostThemesRemaining }}</span>
+          </div>
           <button class="end-battle-btn" @click="endBattle">結束對戰</button>
         </div>
         <div v-else class="answer-panel">
@@ -171,6 +175,7 @@ const hostBattlePlayerName = computed(() => {
   if (!battleInfo.value) return ''
   return battleInfo.value.player1Name === '主持人' ? battleInfo.value.player2Name : battleInfo.value.player1Name
 })
+const hostThemesRemaining = computed(() => gameStore.hostThemes.filter(t => !t.isConsumed).length)
 
 function getVotePercent(playerNum: 1 | 2): number {
   const v1 = voteResults.value?.votes1 ?? 0
@@ -340,7 +345,8 @@ watch(battleWinner, (winner) => {
       themeItems: p.themeStack.items.map(t => ({
         name: t.name,
         isConsumed: t.isConsumed,
-        isActivated: t.isActivated
+        isActivated: t.isActivated,
+        capturedFrom: t.capturedFrom
       }))
     })),
     hostThemesSnapshot: gameStore.hostThemes.map(t => ({
@@ -354,6 +360,7 @@ function endBattle() {
   pendingWinnerName.value = gameStore.battleWinner ?? ''
   hasSkippedOnce.value = false
   stopBattleMusic()
+  const wasHostBattle = isHostBattle.value
   gameStore.resetBattle()
   socket.emit('pushVoteState', {
     currentBattle: gameStore.currentBattle,
@@ -369,7 +376,8 @@ function endBattle() {
       themeItems: p.themeStack.items.map(t => ({
         name: t.name,
         isConsumed: t.isConsumed,
-        isActivated: t.isActivated
+        isActivated: t.isActivated,
+        capturedFrom: t.capturedFrom
       }))
     })),
     hostThemesSnapshot: gameStore.hostThemes.map(t => ({
@@ -377,7 +385,7 @@ function endBattle() {
       isConsumed: t.isConsumed
     }))
   })
-  if (isHostBattle.value) {
+  if (wasHostBattle) {
     gameStore.clearChallenger()
     emit('battle-ended')
   } else {
@@ -1023,5 +1031,38 @@ onUnmounted(() => stopBattleMusic())
 .warning-fade-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+
+/* ─── Host remaining themes indicator ─── */
+
+.host-remaining {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.host-remaining-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 6px rgba(25, 233, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.host-remaining-dot.consumed {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.host-remaining-label {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-left: 2px;
 }
 </style>

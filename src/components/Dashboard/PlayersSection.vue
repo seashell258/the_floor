@@ -42,22 +42,37 @@
               <span>連勝</span>
               <strong>{{ player.winStreak }}</strong>
             </div>
+            <div class="correct-predict">{{ player.correct }}次預測</div>
           </div>
         </div>
 
         <!-- ── Primary battle zone ── -->
-        <div v-if="isCurrentChallenger(player)" class="self-zone">
+        <div v-if="isCurrentChallenger(player)" class="self-zone" :class="{ 'self-zone--captured': challengerPrimaryTheme(player)?.capturedFrom }">
           <div class="self-bracket tl" /><div class="self-bracket tr" />
           <div class="self-bracket bl" /><div class="self-bracket br" />
           <span class="self-eyebrow">本輪</span>
           <span class="self-big">挑戰者</span>
+          <div v-if="challengerPrimaryTheme(player)" class="self-theme-row">
+            <span class="self-theme-label">決鬥主題</span>
+            <span class="self-theme-name" :class="{ 'is-captured': challengerPrimaryTheme(player)?.capturedFrom }">
+              <span v-if="challengerPrimaryTheme(player)?.capturedFrom" class="capture-sword">⚔</span>
+              {{ challengerPrimaryTheme(player)?.name }}
+            </span>
+            <span v-if="challengerPrimaryTheme(player)?.capturedFrom" class="capture-from">
+              奪自 {{ challengerPrimaryTheme(player)?.capturedFrom }}
+            </span>
+          </div>
         </div>
-        <div v-else-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme">
+        <div v-else-if="!player.eliminated && topAvailableTheme(player)" class="primary-theme" :class="{ 'primary-theme--captured': topAvailableTheme(player)?.capturedFrom }">
           <div class="primary-eyebrow">
             <span class="primary-label">決鬥主題</span>
             <Swords :size="11" class="primary-icon" />
+            <span v-if="topAvailableTheme(player)?.capturedFrom" class="capture-badge">奪取</span>
           </div>
-          <span class="primary-name">{{ topAvailableTheme(player)!.name }}</span>
+          <div class="primary-name-row">
+            <span v-if="topAvailableTheme(player)?.capturedFrom" class="capture-sword">⚔</span>
+            <span class="primary-name" :class="{ 'is-captured': topAvailableTheme(player)?.capturedFrom }">{{ topAvailableTheme(player)!.name }}</span>
+          </div>
         </div>
         <div v-else-if="!player.eliminated" class="primary-theme exhausted">
           <span class="primary-name muted">所有主題已消耗</span>
@@ -65,20 +80,20 @@
 
         <!-- ── Secondary themes ── -->
         <div v-if="secondaryThemes(player).length > 0" class="secondary-themes" @click.stop>
-          <span class="secondary-label">其他</span>
           <div
             v-for="theme in secondaryThemes(player)"
             :key="theme.name"
             class="theme-pill"
-            :class="themeClass(theme, player.name)"
+            :class="[themeClass(theme, player.name), { captured: theme.capturedFrom }]"
             @click.stop="handleThemeClick(player, theme)"
           >
+            <span v-if="theme.capturedFrom" class="capture-sword-pill">⚔</span>
             <span class="theme-name">{{ theme.name }}</span>
             <button
               v-if="!theme.isActivated"
               class="revival-btn"
               @click.stop="openRevivalConfirm(player.name)"
-              title="啟用復活題"
+              title="啟用續命題"
             ><Unlock :size="11" /></button>
           </div>
         </div>
@@ -93,7 +108,7 @@
         <div class="player-footer">
           <div class="lives-dots">
             <span
-              v-for="(theme, i) in player.themeStack.items"
+              v-for="(theme, i) in player.themeStack.items.filter((t: any) => t.isActivated)"
               :key="i"
               class="life-dot"
               :class="{
@@ -131,13 +146,19 @@
           <label class="panel-label">主持人主題</label>
           <select v-model="selectedHostThemeKey" @change="onHostThemeChange" class="panel-select">
             <option value="" disabled>請選擇主題</option>
-            <option v-for="t in gameStore.hostThemes" :key="t.name" :value="t.name">
-              {{ t.name }}（{{ t.photos.length }} 張）
+            <option v-for="t in gameStore.hostThemes" :key="t.name" :value="t.name" :disabled="t.isConsumed">
+              {{ t.isConsumed ? '✕ ' : '' }}{{ t.name }}（{{ t.photos.length }} 張）
             </option>
           </select>
-          <span v-if="gameStore.state.hostCurrentTheme" class="current-theme-hint">
-            目前：{{ gameStore.state.hostCurrentTheme.name }}（{{ gameStore.state.hostCurrentTheme.photos.length }} 張）
-          </span>
+          <div class="host-theme-dots">
+            <span
+              v-for="t in gameStore.hostThemes"
+              :key="t.name"
+              class="host-dot"
+              :class="{ consumed: t.isConsumed }"
+              :title="t.name"
+            />
+          </div>
         </div>
         <button
           class="duel-btn"
@@ -161,7 +182,7 @@
             <div class="vs-stage">
               <div class="vs-side vs-left">
                 <span class="vs-role">挑戰者</span>
-                <span class="vs-name vs-name-left">{{ gameStore.currentChallenger?.challenger.name }}</span>
+                <span class="vs-name vs-name-left">{{ vsLeftName }}</span>
               </div>
 
               <div class="vs-center-col">
@@ -193,7 +214,7 @@
     <!-- Revival confirm modal -->
     <div v-if="revivalConfirmPlayer" class="modal-overlay" @click.self="revivalConfirmPlayer = null">
       <div class="modal-content">
-        <h4>啟用復活題？</h4>
+        <h4>啟用續命題？</h4>
         <p>確認啟用 <strong>{{ revivalConfirmPlayer }}</strong> 的第四主題嗎？</p>
         <div class="modal-actions">
           <button class="cancel-btn" @click="revivalConfirmPlayer = null">取消</button>
@@ -292,6 +313,12 @@ function topAvailableTheme(player: any): any | null {
   return player.themeStack.items.find((t: any) => themeClass(t, player.name) === '') ?? null
 }
 
+// The challenger's own first active theme, ignoring selectableKeys temp-locking.
+function challengerPrimaryTheme(player: any): any | null {
+  if (!isCurrentChallenger(player)) return null
+  return player.themeStack.items.find((t: any) => !t.isConsumed && t.isActivated) ?? null
+}
+
 // Everything except the primary theme, for the secondary row.
 function secondaryThemes(player: any): any[] {
   const top = topAvailableTheme(player)
@@ -304,8 +331,14 @@ const pendingBattlePlayer = ref<any>(null)
 const pendingBattleTheme  = ref<any>(null)
 const vsPhase = ref<'vs' | 'countdown' | null>(null)
 const countdownNum = ref(3)
+const isHostBattle = ref(false)
+const pendingHostChallengerName = ref('')
 let vsAutoTimer: number | null = null
 let countdownInterval: ReturnType<typeof setInterval> | null = null
+
+const vsLeftName = computed(() =>
+  isHostBattle.value ? pendingHostChallengerName.value : (gameStore.currentChallenger?.challenger.name ?? '')
+)
 
 onUnmounted(() => {
   if (vsAutoTimer) clearTimeout(vsAutoTimer)
@@ -313,7 +346,17 @@ onUnmounted(() => {
 })
 
 function openVsScreen(player: any, theme: any) {
+  isHostBattle.value = false
   pendingBattlePlayer.value = player
+  pendingBattleTheme.value  = theme
+  vsPhase.value = 'vs'
+  vsAutoTimer = window.setTimeout(startCountdown, 4500)
+}
+
+function openHostVsScreen(challengerName: string, theme: any) {
+  isHostBattle.value = true
+  pendingHostChallengerName.value = challengerName
+  pendingBattlePlayer.value = { name: '主持人' }
   pendingBattleTheme.value  = theme
   vsPhase.value = 'vs'
   vsAutoTimer = window.setTimeout(startCountdown, 4500)
@@ -346,7 +389,15 @@ function executeBattle() {
   pendingBattleTheme.value  = null
   vsPhase.value = null
   immunePlayerName.value = null
-  if (player && theme) props.onThemeClick(player, theme)
+
+  if (isHostBattle.value) {
+    const challengerName = pendingHostChallengerName.value
+    isHostBattle.value = false
+    pendingHostChallengerName.value = ''
+    props.onStartHostBattle(challengerName)
+  } else if (player && theme) {
+    props.onThemeClick(player, theme)
+  }
 }
 
 // Tap the whole card → VS screen with top available theme.
@@ -450,8 +501,12 @@ function openPanel() {
   if (!selectedChallengerName.value && gameStore.activePlayers.length > 0) {
     selectedChallengerName.value = gameStore.activePlayers[0].name
   }
-  if (!selectedHostThemeKey.value && gameStore.state.hostCurrentTheme) {
-    selectedHostThemeKey.value = gameStore.state.hostCurrentTheme.name
+  // Auto-advance to first available theme if current selection is consumed or unset
+  const current = gameStore.hostThemes.find(t => t.name === selectedHostThemeKey.value)
+  if (!current || current.isConsumed) {
+    const firstAvail = gameStore.hostThemes.find(t => !t.isConsumed)
+    selectedHostThemeKey.value = firstAvail?.name ?? ''
+    gameStore.setHostCurrentTheme(firstAvail ?? null)
   }
   isPanelOpen.value = true
 }
@@ -463,8 +518,8 @@ function onHostThemeChange() {
 
 function handleStartDuel() {
   if (!selectedChallengerName.value || !gameStore.state.hostCurrentTheme) return
-  props.onStartHostBattle(selectedChallengerName.value)
   isPanelOpen.value = false
+  openHostVsScreen(selectedChallengerName.value, gameStore.state.hostCurrentTheme)
 }
 </script>
 
@@ -607,6 +662,15 @@ function handleStartDuel() {
   line-height: 1.2;
 }
 
+.correct-predict {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: 'Chakra Petch', sans-serif;
+  letter-spacing: 0.04em;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
 /* ─── Primary Battle Zone ─── */
 
 .primary-theme {
@@ -715,6 +779,120 @@ function handleStartDuel() {
   font-size: 0.88rem;
 }
 
+.primary-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ─── Captured Theme Styling ─── */
+
+.primary-theme--captured {
+  background: rgba(251, 191, 36, 0.07);
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.battle-ready .primary-theme--captured {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.7);
+}
+
+.primary-name.is-captured {
+  color: rgba(251, 191, 36, 0.92);
+}
+
+.capture-badge {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.7);
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  margin-left: auto;
+}
+
+.capture-sword {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+/* Self-zone captured variant */
+
+.self-zone--captured {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(251, 191, 36, 0.04);
+}
+
+.self-zone--captured .self-bracket.tl,
+.self-zone--captured .self-bracket.tr,
+.self-zone--captured .self-bracket.bl,
+.self-zone--captured .self-bracket.br {
+  border-color: rgba(251, 191, 36, 0.6) !important;
+}
+
+.self-theme-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(255, 190, 40, 0.15);
+}
+
+.self-theme-label {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.52rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 190, 40, 0.4);
+}
+
+.self-theme-name {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.self-theme-name.is-captured {
+  color: rgba(251, 191, 36, 0.88);
+}
+
+.capture-from {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: rgba(251, 191, 36, 0.45);
+  margin-top: 0.05rem;
+}
+
+/* Captured secondary theme pill */
+
+.theme-pill.captured {
+  background: rgba(251, 191, 36, 0.08);
+  color: rgba(251, 191, 36, 0.88);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.theme-pill.captured:hover {
+  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(251, 191, 36, 0.6);
+}
+
+.capture-sword-pill {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
 .primary-icon {
   color: var(--glow);
   opacity: 0;
@@ -732,7 +910,7 @@ function handleStartDuel() {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  opacity: 0.28;
+  opacity: 0.6;
   transition: opacity 0.18s ease;
 }
 
@@ -1019,6 +1197,27 @@ function handleStartDuel() {
 .current-theme-hint {
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.host-theme-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-top: 0.35rem;
+}
+
+.host-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 5px rgba(25, 233, 255, 0.55);
+  flex-shrink: 0;
+}
+
+.host-dot.consumed {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
 }
 
 .duel-btn {

@@ -24,7 +24,6 @@
           :style="{ animationDelay: `${(i * 0.41) % 3.5}s` }"
         >
           {{ player.name }}
-          <div class="candidate-predict">{{ player.correct }}次預測</div>
         </div>
       </div>
     </div>
@@ -305,15 +304,6 @@ function handleRemovePlayer(playerName: string) {
 @keyframes card-breathe {
   0%, 100% { box-shadow: none; border-color: rgba(25, 233, 255, 0.2); }
   50%       { box-shadow: 0 0 12px rgba(25, 233, 255, 0.18); border-color: rgba(25, 233, 255, 0.5); }
-}
-
-.candidate-predict {
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  font-family: 'Chakra Petch', sans-serif;
-  margin-top: 0.2rem;
-  letter-spacing: 0.04em;
-  font-weight: 400;
 }
 
 /* ─── Controls ─── */

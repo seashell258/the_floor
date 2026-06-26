@@ -2,21 +2,19 @@
   <div class="login-page">
     <div class="login-card">
       <h1>The Cat Floor</h1>
-      <p class="subtitle">請輸入您的名字</p>
-      
+      <p class="subtitle">請選擇您的名字</p>
+
       <form @submit.prevent="handleLogin">
         <div class="input-group">
-          <input
-            v-model="userName"
-            type="text"
-            placeholder="輸入名字"
-            class="name-input"
-            @keyup.enter="handleLogin"
-            autofocus
-          />
+          <select v-model="userName" class="name-input">
+            <option value="" disabled>選擇玩家</option>
+            <option v-for="p in gameStore.players" :key="p.name" :value="p.name">
+              {{ p.name }}
+            </option>
+          </select>
         </div>
-        
-        <button type="submit" class="login-btn" :disabled="!userName.trim()">
+
+        <button type="submit" class="login-btn" :disabled="!userName">
           進入遊戲
         </button>
       </form>
@@ -34,9 +32,8 @@ const router = useRouter()
 const gameStore = useGameStore()
 
 function handleLogin() {
-  if (!userName.value.trim()) return
-  
-  gameStore.login(userName.value.trim())
+  if (!userName.value) return
+  gameStore.login(userName.value)
   router.push('/vote')
 }
 </script>
@@ -95,9 +92,7 @@ h1 {
   font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
   box-sizing: border-box;
   transition: all 0.3s;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
+  appearance: auto;
 }
 
 .name-input:focus {

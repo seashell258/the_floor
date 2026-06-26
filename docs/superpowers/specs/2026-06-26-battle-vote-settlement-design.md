@@ -125,7 +125,7 @@ Reads directly from `gameStore.players.find(p => p.name === ...).correct`. Host 
 | File | Change |
 |------|--------|
 | `src/views/VoteView.vue` | VOTE_WINDOW_MS → 10000; settlement overlay component; 大預言家 modal; correct count in player-card |
-| `src/pinia/store.ts` | `incrementCorrectVoters()` action; `correct` in snapshot apply; `triggeredPlayers` or equivalent hook |
+| `src/pinia/store.ts` | `incrementCorrectVoters()` action; `correct` in snapshot apply |
 | `src/components/Dashboard/BattleSection.vue` | Call `incrementCorrectVoters()` after `processBattleResult`; add `correct` to `playersSnapshot` serialization in both emit sites |
 | `src/components/Dashboard/GetChallengerSection.vue` | Add `N次預測` line to candidate-card |
 

@@ -98,7 +98,7 @@
             <div class="player-card-header">
               <div>
                 <h4>{{ player.name }}</h4>
-                <p class="player-meta">剩餘命數：{{ player.themeStack.items.filter((t: any) => !t.isConsumed).length }}</p>
+                <p class="player-meta">剩餘命數：{{ player.themeStack.items.filter((t: any) => t.isActivated && !t.isConsumed).length }}</p>
               </div>
               <div class="badges-col">
                 <div class="player-badge">
@@ -114,7 +114,7 @@
 
             <div class="theme-list">
               <div
-                v-for="theme in [...player.themeStack.items].reverse()"
+                v-for="theme in player.themeStack.items"
                 :key="theme.name"
                 class="theme-pill"
                 :class="getThemeClass(theme, player.name, selectableKeys)"
@@ -135,23 +135,23 @@
             </div>
           </div>
         </div>
+
+        <!-- ⚔ Host themes trigger — bottom of status tab -->
+        <button
+          v-if="gameStore.hostThemes.length > 0"
+          type="button"
+          class="host-themes-btn"
+          :class="{ 'is-open': hostPanelOpen }"
+          @click="hostPanelOpen = !hostPanelOpen"
+        >
+          <Swords :size="14" class="host-btn-sword" />
+          <span class="host-btn-label">主持人續命題</span>
+          <span class="host-btn-chip">
+            <span class="chip-avail">{{ hostAvailableCount }}</span><span class="chip-sep">/</span><span class="chip-total">{{ gameStore.hostThemes.length }}</span>
+          </span>
+        </button>
       </section>
     </div>
-
-    <!-- ⚔ Host themes trigger — fixed bottom-left, visible on both tabs -->
-    <button
-      v-if="gameStore.hostThemes.length > 0"
-      type="button"
-      class="host-themes-btn"
-      :class="{ 'is-open': hostPanelOpen }"
-      @click="hostPanelOpen = !hostPanelOpen"
-    >
-      <Swords :size="14" class="host-btn-sword" />
-      <span class="host-btn-label">主持人</span>
-      <span class="host-btn-chip">
-        <span class="chip-avail">{{ hostAvailableCount }}</span><span class="chip-sep">/</span><span class="chip-total">{{ gameStore.hostThemes.length }}</span>
-      </span>
-    </button>
 
     <!-- HOST THEMES BOTTOM SHEET
          Mobile-first. Slides up from bottom with CSS keyframe animation.
@@ -206,9 +206,6 @@
           <div class="settlement-content">
             <div class="settlement-verdict">{{ settlementCorrect ? '猜對了！' : '猜錯了' }}</div>
             <div class="settlement-winner">{{ settlementWinnerName }} 勝利</div>
-            <div v-if="settlementCorrect" class="settlement-count">
-              總計投對 {{ currentVoterCorrect }} 次
-            </div>
           </div>
         </div>
       </Transition>
@@ -279,20 +276,32 @@ watch(() => gameStore.battleWinner, (winner) => {
 
 const VOTE_WINDOW_MS = 10000
 const now = ref(Date.now())
+const localVoteEnd = ref<number | null>(null)
+let seenBattleKey = ''
 let countdownInterval: number | null = null
 
 watch(() => gameStore.currentBattle, (battle) => {
   if (battle) {
-    countdownInterval = window.setInterval(() => {
-      now.value = Date.now()
-      if (voteSecondsLeft.value === 0 && countdownInterval !== null) {
-        clearInterval(countdownInterval)
-        countdownInterval = null
-      }
-    }, 200)
+    now.value = Date.now()
+    const bKey = `${battle.player1Name}|${battle.player2Name}`
+    if (bKey !== seenBattleKey) {
+      seenBattleKey = bKey
+      localVoteEnd.value = Date.now() + VOTE_WINDOW_MS
+    }
+    if (countdownInterval === null) {
+      countdownInterval = window.setInterval(() => {
+        now.value = Date.now()
+        if (voteSecondsLeft.value === 0 && countdownInterval !== null) {
+          clearInterval(countdownInterval)
+          countdownInterval = null
+        }
+      }, 200)
+    }
     showSettlement.value = false
     if (settlementTimer !== null) { clearTimeout(settlementTimer); settlementTimer = null }
   } else {
+    localVoteEnd.value = null
+    seenBattleKey = ''
     if (countdownInterval !== null) {
       clearInterval(countdownInterval)
       countdownInterval = null
@@ -306,9 +315,8 @@ onUnmounted(() => {
 })
 
 const voteSecondsLeft = computed(() => {
-  const startedAt = gameStore.battleStartedAt
-  if (!startedAt) return 0
-  return Math.max(0, Math.ceil((startedAt + VOTE_WINDOW_MS - now.value) / 1000))
+  if (!localVoteEnd.value) return 0
+  return Math.max(0, Math.ceil((localVoteEnd.value - now.value) / 1000))
 })
 
 const voteOpen = computed(() => voteSecondsLeft.value > 0)
@@ -808,16 +816,12 @@ function getVotePercentage(playerNum: number): number {
   }
 }
 
-/* ── Host themes floating trigger ── */
+/* ── Host themes trigger ── */
 .host-themes-btn {
-  position: fixed;
-  /* respect iPhone home bar */
-  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-  left: 1rem;
-  z-index: 100;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-top: 1rem;
   /* min-height: 44px — iOS minimum touch target */
   min-height: 44px;
   padding: 0 1rem 0 0.85rem;
@@ -831,11 +835,9 @@ function getVotePercentage(playerNum: number): number {
   letter-spacing: 0.07em;
   text-transform: uppercase;
   cursor: pointer;
-  backdrop-filter: blur(8px);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
   transition: border-color 0.2s, color 0.2s, box-shadow 0.2s, background 0.2s;
   -webkit-tap-highlight-color: transparent;
-  /* prevent text selection on repeated taps */
   user-select: none;
 }
 
@@ -1128,14 +1130,6 @@ function getVotePercentage(playerNum: number): number {
   font-size: 1.2rem;
   color: var(--text-muted);
   letter-spacing: 0.05em;
-}
-
-.settlement-count {
-  font-family: 'Chakra Petch', sans-serif;
-  font-size: 1rem;
-  color: var(--glow);
-  opacity: 0.75;
-  letter-spacing: 0.06em;
 }
 
 .settlement-fade-enter-active {
