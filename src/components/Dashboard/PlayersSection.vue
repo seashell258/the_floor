@@ -269,6 +269,27 @@
       </div>
     </div>
   </Teleport>
+
+  <!-- ─── Time Bonus Overlay ─── -->
+  <Teleport to="body">
+    <div
+      v-if="showTimeBonusOverlay"
+      class="timebonus-overlay"
+      :class="{ 'timebonus-fading': timeBonusFading }"
+      @click="dismissTimeBonus"
+    >
+      <div class="timebonus-arc-left" />
+      <div class="timebonus-arc-right" />
+      <div class="timebonus-sparks">
+        <div v-for="i in 12" :key="i" class="timebonus-spark" :style="timeBonusSparkStyle(i)" />
+      </div>
+      <div class="timebonus-center">
+        <div class="timebonus-seconds">+{{ timeBonusSeconds }}<span class="timebonus-unit">秒</span></div>
+        <div class="timebonus-player">{{ timeBonusPlayerName }}</div>
+        <div class="timebonus-reason">{{ timeBonusReason }}</div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -276,6 +297,7 @@ import { ref, computed, onUnmounted, watch } from 'vue'
 import { useGameStore } from '../../pinia/store'
 import { getThemeClass } from '../../utils/themeUtils'
 import { Swords, Unlock, Clock, Shield, X } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{
   players: Array<any>
@@ -355,10 +377,46 @@ watch(() => gameStore.justUnlockedTheme, (val) => {
   }, 2200)
 })
 
+// ─── Time bonus overlay ───
+const showTimeBonusOverlay = ref(false)
+const timeBonusFading = ref(false)
+const timeBonusPlayerName = ref('')
+const timeBonusSeconds = ref(0)
+const timeBonusReason = ref('')
+let timeBonusAutoTimer: number | null = null
+
+function timeBonusSparkStyle(i: number) {
+  const angle = ((i - 1) / 12) * 360
+  const rad = (angle * Math.PI) / 180
+  const dist = 85 + ((i * 31) % 75)
+  const w = 2 + ((i * 3) % 5)
+  const h = 10 + ((i * 13) % 18)
+  const delay = ((i * 0.038) % 0.22)
+  return {
+    '--tx': `${Math.cos(rad) * dist}px`,
+    '--ty': `${Math.sin(rad) * dist}px`,
+    '--delay': `${delay}s`,
+    '--rot': `${angle}deg`,
+    width: `${w}px`,
+    height: `${h}px`,
+  }
+}
+
+function dismissTimeBonus() {
+  if (!showTimeBonusOverlay.value) return
+  if (timeBonusAutoTimer) { clearTimeout(timeBonusAutoTimer); timeBonusAutoTimer = null }
+  timeBonusFading.value = true
+  setTimeout(() => {
+    showTimeBonusOverlay.value = false
+    timeBonusFading.value = false
+  }, 260)
+}
+
 onUnmounted(() => {
   if (vsAutoTimer) clearTimeout(vsAutoTimer)
   if (countdownInterval) clearInterval(countdownInterval)
   if (unlockTimer) clearTimeout(unlockTimer)
+  if (timeBonusAutoTimer) clearTimeout(timeBonusAutoTimer)
 })
 
 function openVsScreen(player: any, theme: any) {
@@ -416,8 +474,20 @@ function executeBattle() {
   }
 }
 
+function warnNoChallenger(): boolean {
+  if (!gameStore.currentChallenger) {
+    toast.error('尚未抽出挑戰者', {
+      description: '請先到「抽挑戰者」抽出本輪挑戰者，再選擇對戰主題。',
+      duration: 4000,
+    })
+    return true
+  }
+  return false
+}
+
 // Tap the whole card → VS screen with top available theme.
 function handleCardClick(player: any): void {
+  if (warnNoChallenger()) return
   if (player.eliminated) return
   if (immunePlayerName.value === player.name) return
   const top = topAvailableTheme(player)
@@ -434,6 +504,7 @@ function handleCardClick(player: any): void {
 function handleThemeClick(player: any, theme: any): void {
   const cls = themeClass(theme, player.name)
   if (cls === 'consumed' || cls === 'revival-locked' || cls === 'temp-locked') return
+  if (warnNoChallenger()) return
   if (immunePlayerName.value === player.name) return
   if (player.prop === 'shield' && !isCurrentChallenger(player) && gameStore.currentChallenger) {
     shieldDialogPlayer.value = player
@@ -500,6 +571,14 @@ function applyStreakReward(player: any, bonus: number): void {
   if ((gameStore.state.timePropBonus[player.name] ?? 0) > 0) return
   gameStore.applyTimeProp(player.name, bonus)
   gameStore.consumePendingBonus(player.name, bonus)
+
+  timeBonusPlayerName.value = player.name
+  timeBonusSeconds.value = bonus
+  timeBonusReason.value = bonus === 3 ? '2連勝獎勵' : bonus === 7 ? '4連勝獎勵' : '擊倒獎勵'
+  showTimeBonusOverlay.value = true
+  timeBonusFading.value = false
+  if (timeBonusAutoTimer) clearTimeout(timeBonusAutoTimer)
+  timeBonusAutoTimer = window.setTimeout(dismissTimeBonus, 1900)
 }
 
 function openRevivalConfirm(playerName: string): void {
@@ -1887,5 +1966,161 @@ function handleStartDuel() {
 /* Force secondary-themes visible so the glow isn't opacity-crushed during animation */
 .secondary-themes.has-unlock {
   opacity: 1;
+}
+
+/* ─── Time Bonus Overlay ─── */
+
+.timebonus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  animation: tb-flash-in 0.22s ease-out forwards;
+}
+
+@keyframes tb-flash-in {
+  0%   { background: rgba(245, 158, 11, 0.55); opacity: 0; }
+  18%  { background: rgba(245, 158, 11, 0.18); opacity: 1; }
+  100% { background: rgba(5, 2, 0, 0.97);      opacity: 1; }
+}
+
+.timebonus-overlay.timebonus-fading {
+  animation: tb-out 0.26s ease-out forwards;
+}
+
+@keyframes tb-out {
+  to { opacity: 0; }
+}
+
+/* Diagonal electric arcs — pure CSS, no SVG */
+.timebonus-arc-left,
+.timebonus-arc-right {
+  position: absolute;
+  width: 3px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(245, 158, 11, 0.9) 30%, rgba(245, 158, 11, 0.6) 70%, transparent 100%);
+  border-radius: 999px;
+  filter: blur(1px);
+  animation: tb-arc-in 0.35s 0.08s ease-out both;
+  transform-origin: center center;
+}
+
+.timebonus-arc-left {
+  height: 45vh;
+  left: 20%;
+  top: 10%;
+  transform: rotate(-22deg);
+  opacity: 0;
+}
+
+.timebonus-arc-right {
+  height: 38vh;
+  right: 18%;
+  top: 15%;
+  transform: rotate(18deg);
+  opacity: 0;
+}
+
+@keyframes tb-arc-in {
+  0%   { opacity: 0; transform: rotate(var(--r, -22deg)) scaleY(0); }
+  40%  { opacity: 0.85; transform: rotate(var(--r, -22deg)) scaleY(1.05); }
+  100% { opacity: 0.55; transform: rotate(var(--r, -22deg)) scaleY(1); }
+}
+
+.timebonus-arc-right { --r: 18deg; }
+.timebonus-arc-left  { --r: -22deg; }
+
+/* Spark particles */
+.timebonus-sparks {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.timebonus-spark {
+  position: absolute;
+  border-radius: 2px;
+  background: rgba(245, 158, 11, 0.95);
+  box-shadow: 0 0 7px rgba(245, 158, 11, 0.9);
+  opacity: 0;
+  animation: tb-spark 0.52s var(--delay, 0s) ease-out forwards;
+}
+
+@keyframes tb-spark {
+  0%   { opacity: 1; transform: translate(0,0) rotate(var(--rot,0deg)) scale(1); }
+  55%  { opacity: 0.65; }
+  100% { opacity: 0; transform: translate(var(--tx,60px), var(--ty,-80px)) rotate(var(--rot,0deg)) scale(0); }
+}
+
+/* Center content */
+.timebonus-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.timebonus-seconds {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(5.5rem, 22vw, 11rem);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.03em;
+  color: #f59e0b;
+  text-shadow:
+    0 0 28px rgba(245, 158, 11, 1),
+    0 0 70px rgba(245, 158, 11, 0.45),
+    0 0 140px rgba(245, 158, 11, 0.15);
+  opacity: 0;
+  animation: tb-slam 0.42s 0.1s cubic-bezier(0.12, 1.5, 0.36, 1) forwards;
+}
+
+.timebonus-unit {
+  font-size: 0.45em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  vertical-align: baseline;
+  color: rgba(245, 158, 11, 0.7);
+}
+
+@keyframes tb-slam {
+  from { transform: scale(3.2) translateY(-18px); opacity: 0; filter: blur(14px); }
+  to   { transform: scale(1)   translateY(0);     opacity: 1; filter: blur(0); }
+}
+
+.timebonus-player {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: clamp(1.4rem, 5vw, 2.4rem);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  animation: tb-rise 0.32s 0.38s ease-out forwards;
+}
+
+.timebonus-reason {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(245, 158, 11, 0.5);
+  opacity: 0;
+  animation: tb-rise 0.28s 0.55s ease-out forwards;
+}
+
+@keyframes tb-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 </style>

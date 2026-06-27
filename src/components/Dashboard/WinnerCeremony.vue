@@ -2,8 +2,8 @@
   <Teleport to="body">
     <div
       class="ceremony-overlay"
-      :class="[{ 'streak-mode': isStreak }, { fading: fading }]"
-      @click="isStreak ? handleDismiss() : undefined"
+      :class="[{ 'streak-mode': isStreak }, { 'bonus-mode': hasBonuses && !isStreak }, { fading: fading }]"
+      @click="requiresTap ? handleDismiss() : undefined"
     >
       <div v-if="isStreak" class="impact-flash" />
 
@@ -33,24 +33,48 @@
         <div class="winner-name" :class="{ 'winner-name--streak': isStreak }">
           {{ winner }}
         </div>
-        <div v-if="isStreak" class="dismiss-hint">點擊繼續</div>
+
+        <!-- Bonus reward chips -->
+        <div v-if="hasBonuses" class="bonus-rewards">
+          <div
+            v-for="(bonus, i) in bonuses"
+            :key="bonus.reason"
+            class="bonus-chip"
+            :class="[`bonus-${bonus.type}`, `bonus-delay-${i}`]"
+          >
+            <span class="bonus-seconds">+{{ bonus.seconds }}秒</span>
+            <span class="bonus-sep">·</span>
+            <span class="bonus-reason">{{ bonus.reason }}</span>
+          </div>
+        </div>
+
+        <div v-if="requiresTap" class="dismiss-hint">點擊繼續</div>
       </div>
     </div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { playStreakSFX } from '../../composables/useAudio'
+
+interface BonusReward {
+  seconds: number
+  reason: string
+  type: 'streak' | 'elimination'
+}
 
 const props = defineProps<{
   winner: string
   isStreak: boolean
+  bonuses?: BonusReward[]
 }>()
 
 const emit = defineEmits<{ (e: 'dismissed'): void }>()
 
 const fading = ref(false)
+const hasBonuses = computed(() => (props.bonuses?.length ?? 0) > 0)
+const requiresTap = computed(() => props.isStreak || hasBonuses.value)
 
 function fireParticleStyle(i: number) {
   const left = 3 + ((i - 1) / 18) * 94
@@ -83,8 +107,8 @@ function handleDismiss() {
 }
 
 onMounted(() => {
-  if (props.isStreak) {
-    playStreakSFX()
+  if (requiresTap.value) {
+    if (props.isStreak) playStreakSFX()
   } else {
     setTimeout(() => {
       fading.value = true
@@ -348,5 +372,74 @@ onMounted(() => {
 @keyframes pulse-hint {
   0%, 100% { opacity: 0.6; }
   50%       { opacity: 1; }
+}
+
+/* ─── Bonus Mode (non-streak win with rewards) ─── */
+.ceremony-overlay.bonus-mode {
+  cursor: pointer;
+}
+
+/* ─── Bonus Reward Chips ─── */
+.bonus-rewards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+
+.bonus-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 1.25rem;
+  border-radius: 999px;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 0;
+}
+
+.bonus-delay-0 { animation: bonus-chip-in 0.4s 0.55s cubic-bezier(0.18, 1.35, 0.38, 1) forwards; }
+.bonus-delay-1 { animation: bonus-chip-in 0.4s 0.75s cubic-bezier(0.18, 1.35, 0.38, 1) forwards; }
+.bonus-delay-2 { animation: bonus-chip-in 0.4s 0.95s cubic-bezier(0.18, 1.35, 0.38, 1) forwards; }
+
+@keyframes bonus-chip-in {
+  from { transform: scale(0.55) translateY(10px); opacity: 0; filter: blur(6px); }
+  to   { transform: scale(1) translateY(0);       opacity: 1; filter: blur(0); }
+}
+
+/* Streak bonus: amber */
+.bonus-chip.bonus-streak {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  color: #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.18);
+}
+
+/* Elimination bonus: danger/red */
+.bonus-chip.bonus-elimination {
+  background: rgba(255, 70, 85, 0.12);
+  border: 1.5px solid rgba(255, 70, 85, 0.45);
+  color: #ff4655;
+  box-shadow: 0 0 14px rgba(255, 70, 85, 0.18);
+}
+
+.bonus-seconds {
+  font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.bonus-sep {
+  font-size: 0.8rem;
+  opacity: 0.4;
+}
+
+.bonus-reason {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 </style>

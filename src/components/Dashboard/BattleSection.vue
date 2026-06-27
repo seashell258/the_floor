@@ -131,15 +131,43 @@
     v-if="battleWinner && showCeremony"
     :winner="battleWinner!"
     :is-streak="ceremonyIsStreak"
+    :bonuses="currentBattleBonuses"
     @dismissed="onCeremonyDismissed"
   />
+
+  <Teleport to="body">
+    <div
+      v-if="showUnlockOverlay"
+      class="unlock-overlay"
+      :class="{ 'unlock-fading': unlockFading }"
+      @click="dismissUnlockOverlay"
+    >
+      <div class="unlock-rings">
+        <div class="unlock-ring ur1" />
+        <div class="unlock-ring ur2" />
+        <div class="unlock-ring ur3" />
+      </div>
+      <div class="unlock-sparks">
+        <div v-for="i in 12" :key="i" class="unlock-spark" :style="unlockSparkStyle(i)" />
+      </div>
+      <div class="unlock-center">
+        <div class="unlock-icon">
+          <Unlock :size="88" />
+        </div>
+        <div class="unlock-headline">主題解鎖！</div>
+        <div class="unlock-theme-name">{{ unlockThemeName }}</div>
+        <div class="unlock-sub">{{ unlockPlayerName }} 擊敗主持人</div>
+      </div>
+      <div class="unlock-tap-hint">點擊繼續</div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useGameStore } from '../../pinia/store'
 import { socket } from '../../socket'
-import { Volume2, VolumeX } from 'lucide-vue-next'
+import { Volume2, VolumeX, Unlock } from 'lucide-vue-next'
 import {
   isMuted, toggleMute,
   startBattleMusic, stopBattleMusic,
@@ -197,6 +225,21 @@ const showContinueDialog = ref(false)
 const pendingWinnerName = ref('')
 const showCeremony = ref(false)
 const hasSkippedOnce = ref(false)
+
+interface BonusReward {
+  seconds: number
+  reason: string
+  type: 'streak' | 'elimination'
+}
+const currentBattleBonuses = ref<BonusReward[]>([])
+
+// ─── Unlock overlay ───
+const showUnlockOverlay = ref(false)
+const unlockFading = ref(false)
+const unlockPlayerName = ref('')
+const unlockThemeName = ref('')
+let unlockAutoTimer: number | null = null
+let pendingHostBattleEnd = false
 const skipBtnLabel = computed(() => hasSkippedOnce.value ? '再次跳過' : '跳過')
 const skipBtnDanger = computed(() => hasSkippedOnce.value)
 const ceremonyIsStreak = computed(() => {
@@ -327,6 +370,22 @@ watch(battleInfo, (info) => {
 watch(battleWinner, (winner) => {
   if (!winner) return
   stopBattleMusic()
+
+  // Infer bonuses earned this battle (player-vs-player only)
+  const bonuses: BonusReward[] = []
+  if (!isHostBattle.value) {
+    const battle = gameStore.currentBattle
+    const winnerPlayer = gameStore.players.find(p => p.name === winner)
+    if (battle && winnerPlayer) {
+      const loserName = winner === battle.player1Name ? battle.player2Name : battle.player1Name
+      const loserPlayer = gameStore.players.find(p => p.name === loserName)
+      if (winnerPlayer.winStreak === 2) bonuses.push({ seconds: 3, reason: '2連勝', type: 'streak' })
+      if (winnerPlayer.winStreak === 4) bonuses.push({ seconds: 7, reason: '4連勝', type: 'streak' })
+      if (loserPlayer?.eliminated) bonuses.push({ seconds: 5, reason: '擊倒對手', type: 'elimination' })
+    }
+  }
+  currentBattleBonuses.value = bonuses
+
   if (!ceremonyIsStreak.value) {
     playWinnerSFX()
   }
@@ -356,16 +415,42 @@ watch(battleWinner, (winner) => {
   })
 })
 
+function doFinishHostBattleEnd() {
+  gameStore.clearChallenger()
+  emit('battle-ended')
+}
+
+function dismissUnlockOverlay() {
+  if (!showUnlockOverlay.value) return
+  if (unlockAutoTimer) { clearTimeout(unlockAutoTimer); unlockAutoTimer = null }
+  unlockFading.value = true
+  setTimeout(() => {
+    showUnlockOverlay.value = false
+    unlockFading.value = false
+    if (pendingHostBattleEnd) {
+      pendingHostBattleEnd = false
+      doFinishHostBattleEnd()
+    }
+  }, 380)
+}
+
 function endBattle() {
   const winnerName = gameStore.battleWinner ?? ''
   pendingWinnerName.value = winnerName
   hasSkippedOnce.value = false
   stopBattleMusic()
   const wasHostBattle = isHostBattle.value
+  let didUnlock = false
 
   // Auto-unlock revival theme: player beat the host, no manual step needed
   if (wasHostBattle && winnerName && winnerName !== '主持人') {
     gameStore.activateRevivalTheme(winnerName)
+    const unlocked = gameStore.justUnlockedTheme
+    if (unlocked) {
+      didUnlock = true
+      unlockPlayerName.value = unlocked.playerName
+      unlockThemeName.value = unlocked.themeName
+    }
   }
 
   gameStore.resetBattle()
@@ -393,8 +478,14 @@ function endBattle() {
     }))
   })
   if (wasHostBattle) {
-    gameStore.clearChallenger()
-    emit('battle-ended')
+    if (didUnlock) {
+      showUnlockOverlay.value = true
+      unlockFading.value = false
+      pendingHostBattleEnd = true
+      unlockAutoTimer = window.setTimeout(dismissUnlockOverlay, 3400)
+    } else {
+      doFinishHostBattleEnd()
+    }
   } else {
     showContinueDialog.value = true
   }
@@ -420,9 +511,28 @@ function confirmRestart() {
 
 function onCeremonyDismissed() {
   showCeremony.value = false
+  currentBattleBonuses.value = []
 }
 
-onUnmounted(() => stopBattleMusic())
+function unlockSparkStyle(i: number) {
+  const angle = ((i - 1) / 12) * 360
+  const rad = (angle * Math.PI) / 180
+  const dist = 120 + ((i * 23) % 65)
+  const size = 5 + ((i * 9) % 8)
+  const delay = ((i * 0.055) % 0.3)
+  return {
+    '--tx': `${Math.cos(rad) * dist}px`,
+    '--ty': `${Math.sin(rad) * dist}px`,
+    width: `${size}px`,
+    height: `${size}px`,
+    '--delay': `${delay}s`,
+  }
+}
+
+onUnmounted(() => {
+  stopBattleMusic()
+  if (unlockAutoTimer) clearTimeout(unlockAutoTimer)
+})
 </script>
 
 <style scoped>
@@ -1071,5 +1181,169 @@ onUnmounted(() => stopBattleMusic())
   color: var(--text-muted);
   text-transform: uppercase;
   margin-left: 2px;
+}
+
+/* ─── Revival Unlock Overlay ─── */
+
+.unlock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: rgba(0, 3, 14, 0.97);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.unlock-overlay.unlock-fading {
+  animation: unlock-out 0.38s ease-out forwards;
+}
+
+@keyframes unlock-out {
+  to { opacity: 0; }
+}
+
+/* Expanding rings */
+.unlock-rings {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.unlock-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 220, 80, 0.65);
+}
+
+.unlock-ring.ur1 { width: 110px; height: 110px; animation: unlock-ring-expand 1.15s 0.08s ease-out forwards; }
+.unlock-ring.ur2 { width: 110px; height: 110px; animation: unlock-ring-expand 1.35s 0.26s ease-out forwards; }
+.unlock-ring.ur3 { width: 110px; height: 110px; animation: unlock-ring-expand 1.55s 0.46s ease-out forwards; }
+
+@keyframes unlock-ring-expand {
+  from { transform: scale(0.65); opacity: 0.8; }
+  to   { transform: scale(7);   opacity: 0; }
+}
+
+/* Spark particles */
+.unlock-sparks {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.unlock-spark {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 220, 80, 0.9);
+  box-shadow: 0 0 6px rgba(255, 220, 80, 0.95);
+  opacity: 0;
+  animation: unlock-spark-fly 0.7s var(--delay, 0s) ease-out forwards;
+}
+
+@keyframes unlock-spark-fly {
+  0%   { transform: translate(0, 0) scale(1.3); opacity: 1; }
+  55%  { opacity: 0.6; }
+  100% { transform: translate(var(--tx, 80px), var(--ty, 0px)) scale(0); opacity: 0; }
+}
+
+/* Central content */
+.unlock-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.unlock-icon {
+  color: rgba(255, 220, 80, 0.96);
+  filter:
+    drop-shadow(0 0 24px rgba(255, 220, 80, 0.9))
+    drop-shadow(0 0 72px rgba(255, 220, 80, 0.3));
+  animation: unlock-icon-slam 0.55s cubic-bezier(0.18, 1.35, 0.38, 1) forwards;
+}
+
+@keyframes unlock-icon-slam {
+  from { transform: scale(0.1) rotate(22deg); opacity: 0; filter: blur(16px); }
+  to   { transform: scale(1) rotate(0deg);   opacity: 1; filter: blur(0); }
+}
+
+.unlock-headline {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(3rem, 11vw, 5rem);
+  font-weight: 900;
+  color: rgba(255, 220, 80, 0.97);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-shadow:
+    0 0 28px rgba(255, 220, 80, 0.9),
+    0 0 72px rgba(255, 220, 80, 0.25);
+  opacity: 0;
+  animation: unlock-stamp 0.48s 0.28s cubic-bezier(0.18, 1.45, 0.38, 1) forwards;
+}
+
+@keyframes unlock-stamp {
+  from { transform: scale(2.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.unlock-theme-name {
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  font-size: clamp(1.65rem, 6.5vw, 3rem);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.22);
+  padding: 0.6rem 1.5rem;
+  border: 1.5px solid rgba(255, 220, 80, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 220, 80, 0.06);
+  opacity: 0;
+  animation: unlock-rise 0.42s 0.6s ease-out forwards;
+}
+
+.unlock-sub {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 220, 80, 0.5);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: unlock-rise 0.38s 0.82s ease-out forwards;
+}
+
+@keyframes unlock-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.unlock-tap-hint {
+  position: absolute;
+  bottom: 2.5rem;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: rgba(255, 220, 80, 0.42);
+  opacity: 0;
+  animation: unlock-hint-in 0.3s 1.3s ease forwards;
+}
+
+@keyframes unlock-hint-in {
+  to { opacity: 1; }
 }
 </style>
